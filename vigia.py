@@ -31,7 +31,7 @@ F_ESTADO = DATOS / "estado.json"
 
 HOY = dt.date.today()
 PAUSA = 0.4  # segundos entre descargas, para no saturar los servidores
-FILTRO_VERSION = 2  # súbelo si cambias la lógica de búsqueda: se vuelve a analizar todo
+FILTRO_VERSION = 3  # súbelo si cambias la lógica de búsqueda: se vuelve a analizar todo
 
 # "administrativo" solo cuenta si aparece como puesto de trabajo, no como
 # adjetivo legal ("procedimiento administrativo", "carga administrativa"...).
@@ -86,10 +86,29 @@ def patron_frase(frase):
     return r"\s+".join(re.escape(p) for p in palabras)
 
 
+def patron_lista(frases):
+    """Regex que encuentra cualquiera de las frases, como palabras enteras y
+    admitiendo plural en cada palabra («bolsa de trabajo» -> «bolsas de trabajo»)."""
+    partes = []
+    for f in frases or []:
+        palabras = normalizar(str(f)).split()
+        if palabras:
+            partes.append(r"\s+".join(re.escape(w) + r"(?:s|es)?" for w in palabras))
+    if not partes:
+        return None
+    partes.sort(key=len, reverse=True)   # la frase más larga gana
+    return re.compile(r"\b(?:" + "|".join(partes) + r")\b")
+
+
+RE_ADM = re.compile(r"administrativ[oa]s?")
+
+
 class Buscador:
     def __init__(self, cfg):
-        claves = "|".join(patron_frase(p) for p in cfg["palabras_clave"])
-        self.re_clave = re.compile(rf"\b(?:{claves})s?\b")
+        perfiles = cfg.get("perfiles") or cfg.get("palabras_clave") or []
+        self.re_perfil = patron_lista(perfiles)
+        self.re_tipo = patron_lista(cfg.get("tipos_de_convocatoria"))
+        self.re_excluir = patron_lista(cfg.get("excluir_si_el_titulo_contiene"))
         self.exigir_puesto = cfg.get("exigir_contexto_de_puesto", True)
         self.municipios = cfg["municipios"]
         self.mun_norm = {m: " ".join(normalizar(m).split()) for m in self.municipios}
@@ -98,7 +117,20 @@ class Buscador:
         self.re_mun_titulo = {
             m: re.compile(rf"\bayuntamiento\s+de\s+{patron_frase(m)}\b")
             for m in self.municipios}
+        self.re_org = {o: re.compile(rf"\b{patron_frase(o)}\b")
+                       for o in cfg.get("organismos_extra") or []}
 
+    # ---- condición 1: tipo de convocatoria (vía de entrada al empleo)
+    def tipo(self, texto):
+        if not self.re_tipo:
+            return ""
+        m = self.re_tipo.search(normalizar(texto))
+        return texto[m.start():m.end()] if m else None
+
+    def excluido(self, titulo):
+        return bool(self.re_excluir and self.re_excluir.search(normalizar(titulo)))
+
+    # ---- condición 2: perfil
     def _es_puesto(self, n, texto, m):
         antes = n[max(0, m.start() - 80):m.start()].split()[-3:]
         despues = n[m.end():m.end() + 60].split()[:3]
@@ -108,36 +140,57 @@ class Buscador:
             return True
         return bool(re.match(r"\s*/\s*[oa]\b", texto[m.end():m.end() + 6]))  # «Administrativo/a»
 
-    def clave(self, texto):
-        """Devuelve un fragmento alrededor de la primera coincidencia válida, o None."""
+    def perfil(self, texto):
+        """(fragmento, término encontrado) de la primera coincidencia válida, o None."""
+        if not self.re_perfil or not texto:
+            return None
         n = normalizar(texto)
-        for m in self.re_clave.finditer(n):
-            if self.exigir_puesto and not self._es_puesto(n, texto, m):
+        for m in self.re_perfil.finditer(n):
+            # «administrativo» suelto solo cuenta como puesto, no como adjetivo legal
+            if (self.exigir_puesto and RE_ADM.fullmatch(n[m.start():m.end()])
+                    and not self._es_puesto(n, texto, m)):
                 continue
             ini, fin = max(0, m.start() - 160), min(len(texto), m.end() + 160)
             frag = " ".join(texto[ini:fin].split())
-            return ("…" if ini > 0 else "") + frag + ("…" if fin < len(texto) else "")
+            frag = ("…" if ini > 0 else "") + frag + ("…" if fin < len(texto) else "")
+            return frag, " ".join(texto[m.start():m.end()].split())
+        return None
+
+    def clave(self, texto):   # compatibilidad
+        r = self.perfil(texto)
+        return r[0] if r else None
+
+    # ---- condición 3: zona (municipio u organismo de interés)
+    def _organismo_extra(self, *textos):
+        n = normalizar(" ".join(textos))
+        for o, rx in self.re_org.items():
+            if rx.search(n):
+                return o
         return None
 
     def municipio(self, modo, titulo="", organismo="", texto=""):
-        """Devuelve el municipio encontrado según el modo, '' si no se exige,
+        """Municipio u organismo encontrado según el modo, '' si no se exige,
         o None si no hay coincidencia."""
         if modo == "ninguno":
             return ""
         if modo == "organismo":
-            org = " ".join(normalizar(organismo).split())
-            org = re.sub(r"^(excmo\s+)?ayuntamiento\s+de\s+", "", org)
-            for m, mn in self.mun_norm.items():
-                if org == mn:
-                    return m
-            return None
+            for parte in re.split(r"\s+·\s+", organismo):
+                org = " ".join(normalizar(parte).split())
+                org = re.sub(r"^(excmo\s+)?ayuntamiento\s+de\s+", "", org)
+                for m, mn in self.mun_norm.items():
+                    if org == mn:
+                        return m
+            return self._organismo_extra(organismo)
         if modo == "titulo":
             n = normalizar(titulo)
             for m, rx in self.re_mun_titulo.items():
                 if rx.search(n):
                     return m
-            return None
+            return self._organismo_extra(titulo, organismo)
         if modo == "texto":
+            org = self._organismo_extra(titulo, organismo)
+            if org:
+                return org
             n = normalizar(" ".join([titulo, organismo, texto]))
             for m, rx in self.re_mun_texto.items():
                 for hit in rx.finditer(n):
@@ -246,7 +299,8 @@ def leer_rss(url):
         raise RuntimeError(f"El feed no existe (404): {url}")
     root = ET.fromstring(r.content)  # ElementTree respeta la codificación declarada
     for it in root.iter("item"):
-        cats = [(c.text or "").strip() for c in it.findall("category")]
+        cats = [" ".join(re.sub(r"<br\s*/?>", " · ", c.text or "").split())
+                for c in it.findall("category")]
         fecha = None
         if it.findtext("pubDate"):
             try:
@@ -269,11 +323,16 @@ def candidatos_boe_rss(fuente):
         m = re.search(r"BOE-[A-Z]-\d{4}-\d+", it["url"] + " " + it["descripcion"])
         if not m:
             continue  # p. ej. la entrada "Sumario"
+        partes = [p.strip() for p in it["descripcion"].split(" - ")]
+        partes = [p for p in partes if p and not re.match(
+            r"(publicado|referencia|kbytes|paginas|páginas)\b|[IVX]+\.|[A-Z]\.\s", p, re.I)]
         yield {
             "id": m.group(0), "fuente": fuente["nombre"], "titulo": it["titulo"],
-            "organismo": "", "seccion": "", "fecha": it["fecha"],
+            "organismo": partes[0] if partes else "", "seccion": "", "fecha": it["fecha"],
             "url": f"https://www.boe.es/diario_boe/txt.php?id={m.group(0)}",
             "pdf": "", "modo": fuente["municipio_en"], "lector": "boe",
+            "exigir_tipo": fuente.get("exigir_tipo", True),
+            "tipo_en": fuente.get("tipo_en", "titulo"),
         }
 
 
@@ -331,6 +390,8 @@ def candidatos_borm(fuente):
                 "titulo": it["titulo"], "organismo": organismo, "seccion": seccion,
                 "fecha": it["fecha"], "url": it["url"], "pdf": it["url"],
                 "modo": conf[tipo]["municipio_en"], "lector": "pdf",
+                "exigir_tipo": conf[tipo].get("exigir_tipo", fuente.get("exigir_tipo", True)),
+                "tipo_en": conf[tipo].get("tipo_en", fuente.get("tipo_en", "titulo")),
             }
     if ok == 0:
         raise RuntimeError("ningún canal del BORM respondió")
@@ -402,6 +463,8 @@ def candidatos_relleno_boe(cfg, estado):
                 "seccion": sec, "fecha": dia,
                 "url": f"https://www.boe.es/diario_boe/txt.php?id={item['identificador']}",
                 "pdf": "", "modo": rel.get("municipio_en", "titulo"), "lector": "boe",
+                "exigir_tipo": rel.get("exigir_tipo", False),
+                "tipo_en": rel.get("tipo_en", "titulo"),
             }
         log(f"   API BOE {clave}: {n} anuncios en {', '.join(sorted(secciones))}")
         if dia < HOY:  # el de hoy se vuelve a mirar por si aún no estaba completo
@@ -413,12 +476,19 @@ def candidatos_relleno_boe(cfg, estado):
 # -------------------------------------------------------------- análisis ---
 
 def analizar(c, buscador):
-    """Devuelve el resultado si el anuncio cumple la búsqueda, si no None."""
-    # Atajo: si el municipio se exige en título/organismo y no está, no hace
-    # falta descargar el texto.
+    """Devuelve el resultado si el anuncio cumple las tres condiciones, si no None.
+    Primero se mira lo que es gratis (título, organismo) y solo después se
+    descarga el texto completo."""
+    titulo = c["titulo"]
+    if buscador.excluido(titulo):
+        return None
+    exigir_tipo = c.get("exigir_tipo", True)
+    tipo_en = c.get("tipo_en", "titulo")
+    tipo = buscador.tipo(titulo)
+    if exigir_tipo and tipo_en == "titulo" and not tipo:
+        return None
     if c["modo"] in ("titulo", "organismo"):
-        mun = buscador.municipio(c["modo"], c["titulo"], c["organismo"])
-        if mun is None:
+        if buscador.municipio(c["modo"], titulo, c["organismo"]) is None:
             return None
     if c["lector"] == "boe":
         texto, org = texto_boe(c["id"])
@@ -427,17 +497,22 @@ def analizar(c, buscador):
         texto = ""
     else:
         texto = texto_pdf(c["pdf"])
-    fragmento = buscador.clave(texto) or buscador.clave(c["titulo"])
-    if not fragmento:
+    if not tipo:
+        tipo = buscador.tipo(texto)
+        if exigir_tipo and not tipo:
+            return None
+    hit = buscador.perfil(texto) or buscador.perfil(titulo)
+    if not hit:
         return None
-    mun = buscador.municipio(c["modo"], c["titulo"], c["organismo"], texto)
+    fragmento, perfil = hit
+    mun = buscador.municipio(c["modo"], titulo, c["organismo"], texto)
     if mun is None:
         return None
     promocion = bool(re.search(r"promocion\s+interna|turno\s+de\s+promocion|promocion\s+cruzada",
                                normalizar(texto)))
     return {
-        "promocion": promocion,
-        "id": c["id"], "fuente": c["fuente"], "titulo": c["titulo"],
+        "promocion": promocion, "tipo": tipo or "", "perfil": perfil,
+        "id": c["id"], "fuente": c["fuente"], "titulo": titulo,
         "organismo": c["organismo"], "seccion": c["seccion"],
         "fecha": c["fecha"].isoformat(), "url": c["url"], "municipio": mun,
         "fragmento": (("(No se pudo leer el texto del anuncio; coincidencia solo en el título) "
@@ -464,7 +539,9 @@ def crear_issue(titulo, cuerpo):
 def ficha_md(r):
     org = f"**{r['organismo']}** · " if r["organismo"] else ""
     return (f"### {r['titulo']}\n{org}{r['fuente']} · publicado el {fecha_es(r['fecha'])}"
-            f" · municipio: {r['municipio'] or '—'}{' · ⚠️ promoción interna' if r.get('promocion') else ''}\n\n> {r['fragmento']}\n\n"
+            f" · zona: {r['municipio'] or '—'} · perfil: {r.get('perfil') or '—'}"
+            f"{' · tipo: ' + r['tipo'] if r.get('tipo') else ''}"
+            f"{' · ⚠️ promoción interna' if r.get('promocion') else ''}\n\n> {r['fragmento']}\n\n"
             f"🔗 {r['url']}\n")
 
 
@@ -511,6 +588,7 @@ def generar_pagina(resultados, cfg, estado=None):
       <time>{fecha_es(r['fecha'])}</time>{'<span class="badge">nuevo</span>' if nuevo else ''}{'<span class="badge prom">promoción interna</span>' if r.get('promocion') else ''}</div>
     <h2><a href="{e(r['url'])}" target="_blank" rel="noopener">{e(r['titulo'])}</a></h2>
     <p class="org">{e(r['organismo'] or '')}{' · ' if r['organismo'] else ''}{e(r['fuente'])}{' · <b>' + e(r['municipio']) + '</b>' if r['municipio'] else ''}</p>
+    <p class="tags">{'<span>perfil: ' + e(r['perfil']) + '</span>' if r.get('perfil') else ''}{'<span>tipo: ' + e(r['tipo']) + '</span>' if r.get('tipo') else ''}</p>
     <p class="frag">{e(r['fragmento'])}</p>
   </article>""")
     ult = (estado or {}).get("ultima", {})
@@ -541,12 +619,13 @@ def generar_pagina(resultados, cfg, estado=None):
  .org{{margin:0 0 6px;font-size:.88rem;color:var(--mut)}} .frag{{margin:0;font-size:.9rem}}
  .badge.prom{{background:transparent;color:var(--acc);border:1px solid var(--acc)}}
  .aviso{{color:var(--acc);font-weight:600}}
+ .tags{{margin:0 0 6px;display:flex;gap:6px;flex-wrap:wrap}} .tags span{{font-size:.75rem;border:1px solid var(--line);border-radius:999px;padding:0 8px;color:var(--mut)}}
  .vacio{{color:var(--mut)}} footer{{max-width:820px;margin:auto;padding:0 16px 30px;font-size:.8rem;color:var(--mut)}}
 </style></head><body>
 <header><h1>Vigía de empleo público</h1>
 <p>{len(lista)} anuncio(s) en los últimos {cfg['dias']} días{estado_txt}</p></header>
 <main>{''.join(tarjetas) or vacio}</main>
-<footer>Búsqueda: {e(', '.join(cfg['palabras_clave']))} + {len(cfg['municipios'])} municipios. En el BOE, el plazo de solicitudes suele contar desde el día siguiente a la publicación.</footer>
+<footer>Búsqueda: vía de entrada ({len(cfg.get('tipos_de_convocatoria') or [])} términos) + perfil ({len(cfg.get('perfiles') or cfg.get('palabras_clave') or [])} términos) + zona ({len(cfg['municipios'])} municipios y {len(cfg.get('organismos_extra') or [])} organismos). En el BOE, el plazo de solicitudes suele contar desde el día siguiente a la publicación.</footer>
 </body></html>"""
     DOCS.mkdir(exist_ok=True)
     (DOCS / "index.html").write_text(pagina, encoding="utf-8")
@@ -571,9 +650,10 @@ def main():
     resultados = cargar(F_RESULTADOS, [])
     estado = cargar(F_ESTADO, {})
     reanalisis = False
+    ids_previos = {r["id"] for r in resultados}
     if estado.get("filtro") != FILTRO_VERSION:
         if vistos or resultados:
-            log("Filtro actualizado: se vuelve a analizar todo (sin enviar avisos repetidos).")
+            log("Filtro actualizado: se vuelve a analizar todo (solo se avisa de lo nuevo).")
             vistos, resultados, estado["dias_boe"] = {}, [], []
             reanalisis = True
         estado["filtro"] = FILTRO_VERSION
@@ -648,7 +728,9 @@ def main():
                         "pendientes": len(pend)}
     guardar(F_ESTADO, estado)
     generar_pagina(resultados, cfg, estado)
-    if not sin_avisos and not reanalisis:
+    if reanalisis:   # no repetir avisos de lo que ya conocías
+        nuevos = [r for r in nuevos if r["id"] not in ids_previos]
+    if not sin_avisos:
         avisar(nuevos, cfg)
 
     log(f"\nNovedades: {len(nuevos)}")
