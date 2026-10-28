@@ -1,5 +1,6 @@
 [
  {
+  "promocion": true,
   "id": "BOE-A-2026-21373",
   "fuente": "BOE · Oposiciones",
   "titulo": "Resolución de 8 de octubre de 2026, del Ayuntamiento de Rafal (Alicante/Alacant), referente a la convocatoria para proveer una plaza.",
@@ -12,6 +13,7 @@
   "detectado": "2026-10-28"
  },
  {
+  "promocion": false,
   "id": "BOE-A-2026-20871",
   "fuente": "BOE · Oposiciones",
   "titulo": "Resolución de 2 de octubre de 2026, del Ayuntamiento de Rojales (Alicante/Alacant), referente a la convocatoria para proveer una plaza.",
@@ -24,6 +26,7 @@
   "detectado": "2026-10-28"
  },
  {
+  "promocion": true,
   "id": "BOE-A-2026-20561",
   "fuente": "BOE · Oposiciones",
   "titulo": "Resolución de 28 de septiembre de 2026, del Ayuntamiento de Torre-Pacheco (Murcia), referente a la convocatoria para proveer varias plazas.",
@@ -36,6 +39,7 @@
   "detectado": "2026-10-28"
  },
  {
+  "promocion": false,
   "id": "BOE-A-2026-21565",
   "fuente": "BOE · Concursos de personal",
   "titulo": "Resolución de 13 de octubre de 2026, del Ayuntamiento de Torre-Pacheco (Murcia), referente a la convocatoria para proveer puestos de trabajo por el sistema de concurso.",
@@ -48,6 +52,7 @@
   "detectado": "2026-10-28"
  },
  {
+  "promocion": false,
   "id": "BOE-A-2026-18220",
   "fuente": "BOE · Concursos de personal",
   "titulo": "Resolución de 20 de agosto de 2026, del Ayuntamiento de San Pedro del Pinatar (Murcia), referente a la convocatoria para proveer puesto de trabajo por el sistema de concurso.",
@@ -57,66 +62,6 @@
   "url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-18220",
   "municipio": "San Pedro del Pinatar",
   "fragmento": "…han de regir la convocatoria para proveer por concurso: Un puesto de Técnico/a de Contratación, perteneciente a la escala de Administración General, subescala Administrativa. Dichas bases fueron rectificadas en los términos publicados en el «Boletín Oficial de la Región de Murcia» número 191, de 20 de agosto de 2026. El plazo de pr…",
-  "detectado": "2026-10-28"
- },
- {
-  "id": "BOE-A-2026-22509",
-  "fuente": "BOE · III. Otras disposiciones",
-  "titulo": "Resolución de 22 de octubre de 2026, de la Secretaría General Técnica, por la que se publica el Convenio entre la Secretaría de Estado de Seguridad y el Ayuntamiento de Torrevieja, en materia de seguridad.",
-  "organismo": "Ministerio del Interior",
-  "seccion": "",
-  "fecha": "2026-10-27",
-  "url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-22509",
-  "municipio": "Torrevieja",
-  "fragmento": "…o queda sometido al régimen jurídico de los convenios, previsto en el capítulo VI del título preliminar de la Ley 40/2015, de 1 de octubre, teniendo naturaleza administrativa. Las dudas o controversias que surjan entre las partes, sobre los efectos, interpretación, modificación o resolución del mismo que no puedan resolverse por con…",
-  "detectado": "2026-10-28"
- },
- {
-  "id": "BOE-A-2026-22510",
-  "fuente": "BOE · III. Otras disposiciones",
-  "titulo": "Resolución de 22 de octubre de 2026, de la Secretaría General Técnica, por la que se publica el Convenio entre la Secretaría de Estado de Seguridad y el Ayuntamiento de Orihuela, en materia de seguridad.",
-  "organismo": "Ministerio del Interior",
-  "seccion": "",
-  "fecha": "2026-10-27",
-  "url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-22510",
-  "municipio": "Orihuela",
-  "fragmento": "…o queda sometido al régimen jurídico de los convenios, previsto en el capítulo VI del título preliminar de la Ley 40/2015, de 1 de octubre, teniendo naturaleza administrativa. Las dudas o controversias que surjan entre las partes, sobre los efectos, interpretación, modificación o resolución del mismo que no puedan resolverse por con…",
-  "detectado": "2026-10-28"
- },
- {
-  "id": "BOE-B-2026-35110",
-  "fuente": "BOE · V.B. Otros anuncios oficiales",
-  "titulo": "Resolución de la Dirección General del Sector Ferroviario por la que se abre Información Pública y se convoca a los propietarios de los bienes y derechos afectados al levantamiento de las actas previas correspondientes al Expediente de Expropiación Forzosa 061ADIF2614 motivado por las obras del Proyecto básico para la construcción de caminos de enlace y reposición de líneas eléctricas en las obras de ejecución del Proyecto de la LAV Palencia - Aguilar de Campoo. Tramos: Calahorra de Boedo - Alar del Rey y Palencia Norte - Amusco en los términos municipales de Alar del Rey, Calahorra de Boedo, Fuentes de Valdepero, Grijota, Herrera de Pisuerga, Husillos, Palencia, Páramo de Boedo y Prádanos de Ojeda.",
-  "organismo": "Ministerio de Transportes y Movilidad Sostenible",
-  "seccion": "",
-  "fecha": "2026-10-27",
-  "url": "https://www.boe.es/diario_boe/txt.php?id=BOE-B-2026-35110",
-  "municipio": "Murcia",
-  "fragmento": "…ervirá de notificación para los interesados desconocidos o de ignorado domicilio a los efectos prevenidos en la Ley 39/2015, de 1 de octubre, del Procedimiento Administrativo Común de las Administraciones Públicas. No obstante, se convocará a los interesados al acto del levantamiento de las actas previas, mediante citación individua…",
-  "detectado": "2026-10-28"
- },
- {
-  "id": "BOE-B-2026-35150",
-  "fuente": "BOE · V.B. Otros anuncios oficiales",
-  "titulo": "Anuncio de la Confederación Hidrográfica del Segura relativo a la Información Pública de inicio del trámite de competencia de proyectos de una concesión de aguas subterráneas. T.M. Torre Pacheco (Murcia) CPR-76/2019.",
-  "organismo": "Ministerio para la Transición Ecológica y el Reto Demográfico",
-  "seccion": "",
-  "fecha": "2026-10-27",
-  "url": "https://www.boe.es/diario_boe/txt.php?id=BOE-B-2026-35150",
-  "municipio": "Murcia",
-  "fragmento": "…rográfica del Segura, O.A., podrán presentarse en cualquiera de los lugares indicados en el artículo 16.4 de la Ley 39/2015, de 1 de octubre, del Procedimiento Administrativo Común de las Administraciones Públicas. Debe tenerse en cuenta que los sujetos enumerados en el artículo 14.2 de la Ley 39/2015, de 1 de octubre, están obligad…",
-  "detectado": "2026-10-28"
- },
- {
-  "id": "BORM-845925",
-  "fuente": "BORM",
-  "titulo": "5243 Decreto n.º 212/2026, de 22 de octubre, por el que se regulan en el ámbito territorial de la Región de Murcia, los procedimientos relativos a la fase nacional de inscripción, modificación y anulación de las indicaciones geográficas de productos artesanales e industriales en el Registro de la Unión Europea, y se regulan los aspectos de control. (28 página/s - 371.47KB)",
-  "organismo": "Consejo de Gobierno",
-  "seccion": "I1. Disposiciones Generales",
-  "fecha": "2026-10-28",
-  "url": "https://www.borm.es/services/anuncio/845925/pdf",
-  "municipio": "",
-  "fragmento": "…s en su articulado, mediante un procedimiento de registro eficiente, previsible, rápido y expeditivo que garantice la igualdad de tratamiento, evite la carga administrativa, especialmente para las microempresas y las pequeñas y medianas empresas, sea transparente y cree seguridad jurídica en todas las etapas. Esta norma europea…",
   "detectado": "2026-10-28"
  }
 ]
