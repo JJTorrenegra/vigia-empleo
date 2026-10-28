@@ -196,7 +196,7 @@ def texto_boe(id_boe):
 
 
 _diag = {"n": 0}
-PDF = {"intentos": 0, "fallos": 0}   # descargas reales de PDF y fallos
+PDF = {"intentos": 0, "fallos": 0, "seguidos": 0}   # descargas reales de PDF y fallos
 
 
 def texto_pdf(url):
@@ -205,6 +205,9 @@ def texto_pdf(url):
     hay manera, lanza TextoNoDisponible para dejarlo pendiente."""
     from pypdf import PdfReader
     PDF["intentos"] += 1
+    if PDF["seguidos"] >= 3:   # el servidor no responde: no machacarlo ni perder 30 s por anuncio
+        PDF["fallos"] += 1
+        raise TextoNoDisponible("pausado: el servidor no devolvió PDF en las últimas peticiones")
     ultimo = ""
     for espera in (0, 8, 25):
         if espera:
@@ -219,6 +222,7 @@ def texto_pdf(url):
             PDF["fallos"] += 1
             raise TextoNoDisponible("el anuncio no existe (404)")
         if r.content[:5] == b"%PDF-":
+            PDF["seguidos"] = 0
             try:
                 lector = PdfReader(io.BytesIO(r.content))
                 return "\n".join((pg.extract_text() or "") for pg in lector.pages)
@@ -229,6 +233,7 @@ def texto_pdf(url):
         ultimo = (f"no es un PDF (HTTP {r.status_code}, {r.headers.get('content-type')}, "
                   f"url final {r.url}): «{inicio}»")
     PDF["fallos"] += 1
+    PDF["seguidos"] += 1
     if _diag["n"] < 3:  # solo los 3 primeros, para no llenar el registro
         _diag["n"] += 1
         log(f"   ⚠ {url} -> {ultimo}")
@@ -272,6 +277,24 @@ def candidatos_boe_rss(fuente):
         }
 
 
+RE_SECCION = re.compile(r"^\s*[IVX]+\d*\s*\.")
+RE_DIA = re.compile(r"^(lunes|martes|miercoles|jueves|viernes|sabado|domingo)\b")
+
+
+def clasificar_categorias(cats):
+    """El boletín del día trae [sección, organismo]; los canales por organismo
+    traen [fecha, organismo, sección]. Esto sirve para los dos."""
+    seccion = organismo = ""
+    for c in cats:
+        if RE_SECCION.match(c):
+            seccion = seccion or c
+        elif RE_DIA.match(" ".join(normalizar(c).split())):
+            continue
+        else:
+            organismo = organismo or c
+    return seccion, organismo
+
+
 def seccion_borm(seccion):
     m = re.match(r"\s*([IVX]+)", seccion)
     romano = m.group(1) if m else ""
@@ -283,19 +306,34 @@ def seccion_borm(seccion):
 
 def candidatos_borm(fuente):
     conf = fuente.get("secciones", {})
-    for it in leer_rss(fuente["url"]):
-        seccion = it["categorias"][0] if it["categorias"] else ""
-        organismo = it["categorias"][1] if len(it["categorias"]) > 1 else it["descripcion"]
-        tipo = seccion_borm(seccion)
-        if not tipo or not conf.get(tipo, {}).get("activa", False):
+    urls = fuente.get("urls") or [fuente["url"]]
+    ok = 0
+    for url in urls:
+        try:
+            items = list(leer_rss(url))
+        except Exception as e:     # un canal caído no impide leer los demás
+            errores.append(f"Canal BORM {url}: {e}")
             continue
-        m = re.search(r"/anuncio/(\d+)", it["url"])
-        yield {
-            "id": f"BORM-{m.group(1) if m else it['url']}", "fuente": fuente["nombre"],
-            "titulo": it["titulo"], "organismo": organismo, "seccion": seccion,
-            "fecha": it["fecha"], "url": it["url"], "pdf": it["url"],
-            "modo": conf[tipo]["municipio_en"], "lector": "pdf",
-        }
+        ok += 1
+        for it in items:
+            seccion, organismo = clasificar_categorias(it["categorias"])
+            organismo = organismo or it["descripcion"]
+            tipo = seccion_borm(seccion)
+            if not tipo or not conf.get(tipo, {}).get("activa", False):
+                continue
+            apartados = conf[tipo].get("solo_apartados")
+            if apartados and not any(seccion.strip().upper().startswith(str(a).upper())
+                                     for a in apartados):
+                continue
+            m = re.search(r"/anuncio/(\d+)", it["url"])
+            yield {
+                "id": f"BORM-{m.group(1) if m else it['url']}", "fuente": fuente["nombre"],
+                "titulo": it["titulo"], "organismo": organismo, "seccion": seccion,
+                "fecha": it["fecha"], "url": it["url"], "pdf": it["url"],
+                "modo": conf[tipo]["municipio_en"], "lector": "pdf",
+            }
+    if ok == 0:
+        raise RuntimeError("ningún canal del BORM respondió")
 
 
 def _recorrer_sumario(nodo, seccion="", departamento=""):
@@ -457,7 +495,7 @@ def fecha_es(iso):
     return f"{d.day} de {MESES[d.month - 1]} de {d.year}"
 
 
-def generar_pagina(resultados, cfg):
+def generar_pagina(resultados, cfg, estado=None):
     desde = (HOY - dt.timedelta(days=cfg["dias"])).isoformat()
     lista = sorted((r for r in resultados if r["fecha"] >= desde),
                    key=lambda r: (r["fecha"], r["id"]), reverse=True)
@@ -475,6 +513,14 @@ def generar_pagina(resultados, cfg):
     <p class="org">{e(r['organismo'] or '')}{' · ' if r['organismo'] else ''}{e(r['fuente'])}{' · <b>' + e(r['municipio']) + '</b>' if r['municipio'] else ''}</p>
     <p class="frag">{e(r['fragmento'])}</p>
   </article>""")
+    ult = (estado or {}).get("ultima", {})
+    estado_txt = ""
+    if ult:
+        estado_txt = (f" · última revisión: {e(ult['hora'])} "
+                      f"({ult['revisados']} anuncios nuevos analizados)")
+        if ult.get("pendientes"):
+            estado_txt += (f'<br><span class="aviso">⚠ {ult["pendientes"]} anuncio(s) del BORM '
+                           "sin poder leer todavía; se reintentan en cada revisión.</span>")
     vacio = '<p class="vacio">No hay anuncios que cumplan la búsqueda en este periodo.</p>'
     pagina = f"""<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
@@ -494,10 +540,11 @@ def generar_pagina(resultados, cfg):
  h2{{font-size:1.02rem;margin:6px 0}} h2 a{{color:var(--fg)}} h2 a:hover{{color:var(--acc)}}
  .org{{margin:0 0 6px;font-size:.88rem;color:var(--mut)}} .frag{{margin:0;font-size:.9rem}}
  .badge.prom{{background:transparent;color:var(--acc);border:1px solid var(--acc)}}
+ .aviso{{color:var(--acc);font-weight:600}}
  .vacio{{color:var(--mut)}} footer{{max-width:820px;margin:auto;padding:0 16px 30px;font-size:.8rem;color:var(--mut)}}
 </style></head><body>
 <header><h1>Vigía de empleo público</h1>
-<p>{len(lista)} anuncio(s) en los últimos {cfg['dias']} días · actualizado el {fecha_es(HOY.isoformat())}</p></header>
+<p>{len(lista)} anuncio(s) en los últimos {cfg['dias']} días{estado_txt}</p></header>
 <main>{''.join(tarjetas) or vacio}</main>
 <footer>Búsqueda: {e(', '.join(cfg['palabras_clave']))} + {len(cfg['municipios'])} municipios. En el BOE, el plazo de solicitudes suele contar desde el día siguiente a la publicación.</footer>
 </body></html>"""
@@ -533,6 +580,7 @@ def main():
     ids_resultado = {r["id"] for r in resultados}
     fuentes_caidas = 0
     pend = estado.setdefault("pendientes", {})
+    total_rev = 0
     intentados = set()                      # ids ya probados en esta ejecución
     desde = HOY - dt.timedelta(days=cfg["dias"])
 
@@ -579,6 +627,7 @@ def main():
         except Exception as ex:
             fuentes_caidas += 1
             errores.append(f"Fuente «{nombre}» no disponible: {ex}")
+        total_rev += n_rev
         log(f"   {n_rev} anuncios nuevos revisados")
 
     # Limpieza: olvidar lo visto hace más de 90 días
@@ -590,8 +639,15 @@ def main():
         pend.pop(k)
     guardar(F_VISTOS, vistos)
     guardar(F_RESULTADOS, resultados)
+    try:
+        from zoneinfo import ZoneInfo
+        ahora = dt.datetime.now(ZoneInfo("Europe/Madrid"))
+    except Exception:
+        ahora = dt.datetime.now()
+    estado["ultima"] = {"hora": ahora.strftime("%d/%m/%Y %H:%M"), "revisados": total_rev,
+                        "pendientes": len(pend)}
     guardar(F_ESTADO, estado)
-    generar_pagina(resultados, cfg)
+    generar_pagina(resultados, cfg, estado)
     if not sin_avisos and not reanalisis:
         avisar(nuevos, cfg)
 
