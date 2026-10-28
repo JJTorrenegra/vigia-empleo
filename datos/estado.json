@@ -28,5 +28,10 @@
   "2026-10-27"
  ],
  "filtro": 2,
- "pendientes": {}
+ "pendientes": {},
+ "ultima": {
+  "hora": "28/10/2026 14:05",
+  "revisados": 39,
+  "pendientes": 0
+ }
 }
