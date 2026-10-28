@@ -43,6 +43,21 @@ CONTEXTO_DESPUES = set("plaza plazas vacante vacantes subgrupo c1 c2".split())
 # Un municipio precedido de esto no cuenta ("Región de Murcia" no es Murcia).
 NO_MUNICIPIO = [["region", "de"], ["universidad", "de"], ["provincia", "de"], ["comunidad", "de"]]
 
+PAUSA_BORM = 2.0        # el BORM es más sensible: una petición cada 2 s
+DIAS_REINTENTO = 7      # un anuncio sin poder leer se reintenta hasta 7 días
+CAB_NAVEGADOR = {
+    "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                   "(KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"),
+    "Accept": "application/pdf,*/*;q=0.8",
+    "Accept-Language": "es-ES,es;q=0.9",
+    "Referer": "https://www.borm.es/",
+}
+
+
+class TextoNoDisponible(Exception):
+    """No se pudo obtener el texto del anuncio (se reintentará más tarde)."""
+
+
 SESION = requests.Session()
 SESION.headers["User-Agent"] = "VigiaEmpleoPublico/1.0 (uso personal)"
 
@@ -135,15 +150,19 @@ class Buscador:
 
 # ------------------------------------------------------------- descargas ---
 
-def descargar(url, accept=None, intentos=3):
-    cab = {"Accept": accept} if accept else {}
+def descargar(url, accept=None, intentos=3, cabeceras=None, sin_sesion=False, pausa=None):
+    """sin_sesion=True: conexión nueva, sin cookies de peticiones anteriores."""
+    cab = dict(cabeceras or {})
+    if accept:
+        cab["Accept"] = accept
+    cliente = requests if sin_sesion else SESION
     for i in range(intentos):
         try:
-            r = SESION.get(url, headers=cab, timeout=40)
+            r = cliente.get(url, headers=cab, timeout=40)
             if r.status_code == 404:
                 return None
             r.raise_for_status()
-            time.sleep(PAUSA)
+            time.sleep(PAUSA if pausa is None else pausa)
             return r
         except requests.RequestException as e:
             if i == intentos - 1:
@@ -176,13 +195,44 @@ def texto_boe(id_boe):
     return html.unescape(re.sub(r"<[^>]+>", " ", limpio)), ""
 
 
+_diag = {"n": 0}
+PDF = {"intentos": 0, "fallos": 0}   # descargas reales de PDF y fallos
+
+
 def texto_pdf(url):
+    """Descarga un PDF y devuelve su texto. Si el servidor responde otra cosa
+    (p. ej. una página HTML en lugar del PDF), reintenta con esperas y, si no
+    hay manera, lanza TextoNoDisponible para dejarlo pendiente."""
     from pypdf import PdfReader
-    r = descargar(url)
-    if r is None:
-        return ""
-    lector = PdfReader(io.BytesIO(r.content))
-    return "\n".join((p.extract_text() or "") for p in lector.pages)
+    PDF["intentos"] += 1
+    ultimo = ""
+    for espera in (0, 8, 25):
+        if espera:
+            time.sleep(espera)
+        try:
+            r = descargar(url, cabeceras=CAB_NAVEGADOR, sin_sesion=True,
+                          pausa=PAUSA_BORM, intentos=1)
+        except requests.RequestException as e:
+            ultimo = f"error de red o HTTP: {e}"
+            continue
+        if r is None:
+            PDF["fallos"] += 1
+            raise TextoNoDisponible("el anuncio no existe (404)")
+        if r.content[:5] == b"%PDF-":
+            try:
+                lector = PdfReader(io.BytesIO(r.content))
+                return "\n".join((pg.extract_text() or "") for pg in lector.pages)
+            except Exception as e:
+                PDF["fallos"] += 1
+                raise TextoNoDisponible(f"PDF ilegible: {e}")
+        inicio = " ".join(re.sub(r"<[^>]+>", " ", r.text[:1500]).split())[:200]
+        ultimo = (f"no es un PDF (HTTP {r.status_code}, {r.headers.get('content-type')}, "
+                  f"url final {r.url}): «{inicio}»")
+    PDF["fallos"] += 1
+    if _diag["n"] < 3:  # solo los 3 primeros, para no llenar el registro
+        _diag["n"] += 1
+        log(f"   ⚠ {url} -> {ultimo}")
+    raise TextoNoDisponible(ultimo)
 
 
 def leer_rss(url):
@@ -267,6 +317,16 @@ def _recorrer_sumario(nodo, seccion="", departamento=""):
                 yield from _recorrer_sumario(v, sec, dep)
 
 
+def candidatos_pendientes(estado):
+    """Anuncios cuyo texto no se pudo leer en ejecuciones anteriores."""
+    for id_, c in list(estado.get("pendientes", {}).items()):
+        c = dict(c)
+        c["fecha"] = dt.date.fromisoformat(c["fecha"])
+        if (HOY - c["fecha"]).days > DIAS_REINTENTO:
+            c["lector"] = "titulo"       # último recurso: mirar solo el título
+        yield c
+
+
 def candidatos_relleno_boe(cfg, estado):
     rel = cfg.get("relleno_boe", {})
     if not rel.get("activo"):
@@ -325,6 +385,8 @@ def analizar(c, buscador):
     if c["lector"] == "boe":
         texto, org = texto_boe(c["id"])
         c["organismo"] = c["organismo"] or org
+    elif c["lector"] == "titulo":   # texto imposible de leer tras varios días
+        texto = ""
     else:
         texto = texto_pdf(c["pdf"])
     fragmento = buscador.clave(texto) or buscador.clave(c["titulo"])
@@ -340,7 +402,9 @@ def analizar(c, buscador):
         "id": c["id"], "fuente": c["fuente"], "titulo": c["titulo"],
         "organismo": c["organismo"], "seccion": c["seccion"],
         "fecha": c["fecha"].isoformat(), "url": c["url"], "municipio": mun,
-        "fragmento": fragmento[:500], "detectado": HOY.isoformat(),
+        "fragmento": (("(No se pudo leer el texto del anuncio; coincidencia solo en el título) "
+                       if c["lector"] == "titulo" else "") + fragmento)[:520],
+        "detectado": HOY.isoformat(),
     }
 
 
@@ -468,8 +532,13 @@ def main():
         estado["filtro"] = FILTRO_VERSION
     ids_resultado = {r["id"] for r in resultados}
     fuentes_caidas = 0
+    pend = estado.setdefault("pendientes", {})
+    intentados = set()                      # ids ya probados en esta ejecución
+    desde = HOY - dt.timedelta(days=cfg["dias"])
 
     def generadores():
+        if pend:
+            yield f"Pendientes de ejecuciones anteriores ({len(pend)})", candidatos_pendientes(estado)
         for f in cfg["fuentes"]:
             if not f.get("activa", True):
                 continue
@@ -483,13 +552,23 @@ def main():
         n_rev = 0
         try:
             for c in gen:
-                if c["id"] in vistos:
+                if c["id"] in vistos or c["id"] in intentados or c["fecha"] < desde:
                     continue
+                intentados.add(c["id"])
                 try:
                     res = analizar(c, buscador)
+                except TextoNoDisponible as ex:
+                    previo = pend.get(c["id"], {})
+                    pend[c["id"]] = {**{k: v for k, v in c.items() if k != "fecha"},
+                                     "fecha": c["fecha"].isoformat(),
+                                     "lector": "pdf" if c["lector"] == "titulo" else c["lector"],
+                                     "intentos": previo.get("intentos", 0) + 1}
+                    errores.append(f"{c['id']}: texto no disponible (se reintentará): {str(ex)[:120]}")
+                    continue
                 except Exception as ex:  # un anuncio roto no para el resto
                     errores.append(f"{c['id']}: {ex}")
                     continue
+                pend.pop(c["id"], None)
                 vistos[c["id"]] = HOY.isoformat()
                 n_rev += 1
                 if res and res["id"] not in ids_resultado:
@@ -507,6 +586,8 @@ def main():
     vistos = {k: v for k, v in vistos.items() if v >= limite}
     resultados = [r for r in resultados if r["fecha"] >= limite]
 
+    for k in [k for k, c in pend.items() if k in vistos]:
+        pend.pop(k)
     guardar(F_VISTOS, vistos)
     guardar(F_RESULTADOS, resultados)
     guardar(F_ESTADO, estado)
@@ -517,7 +598,14 @@ def main():
     log(f"\nNovedades: {len(nuevos)}")
     if errores:
         log("Avisos/errores:\n  - " + "\n  - ".join(errores[:50]))
-    if fuentes_caidas:
+    if pend:
+        log(f"\n⚠ {len(pend)} anuncio(s) con texto ilegible por ahora; se reintentarán "
+            f"durante {DIAS_REINTENTO} días.")
+    bloqueo = PDF["fallos"] >= 3 and PDF["fallos"] * 2 >= PDF["intentos"]
+    if bloqueo:
+        log(f"⚠ El BORM no ha devuelto el texto de {PDF['fallos']} de {PDF['intentos']} anuncios: "
+            "posible bloqueo temporal del servidor.")
+    if fuentes_caidas or bloqueo:
         sys.exit(1)  # GitHub te avisará por correo de que algo ha fallado
 
 
