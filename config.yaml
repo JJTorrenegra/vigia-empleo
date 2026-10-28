@@ -231,6 +231,29 @@ fuentes:
         municipio_en: texto
         tipo_en: texto         # sus títulos son genéricos: el tipo se busca en el texto
 
+# ---------------------------------------------------------------------
+# Portal de Empleo Público de la CARM (empleopublico.carm.es).
+# Cada búsqueda es la dirección que sale al buscar en el portal.
+# El vigía muestra en la web lo que hay ahora mismo en cada búsqueda y te
+# avisa por correo cuando aparece una convocatoria que no había visto antes.
+# Para añadir otro cuerpo, copia una búsqueda y cambia el código que va
+# detrás de CUERPOS_OFERTABLES= (ejemplos: BGX00 Gestión Administrativa A2,
+# CFX25 Tributaria C1, DFX31 Tributaria C2, CFX16 Informática C1).
+# Estados (ESTADOS_OPOSICIONES=): IN plazo de solicitud abierto,
+# AC oposiciones actuales, HI oposiciones antiguas.
+# ---------------------------------------------------------------------
+portal_carm:
+  activo: true
+  busquedas:
+    - nombre: "Administrativo, C1 · plazo abierto"
+      url: "https://empleopublico.carm.es/web/pagina?IDCONTENIDO=62006&IDTIPO=100&RASTRO=c%24m61986%2C61991&BUSCAR_POR=CUERPO_OFERTA&CUERPOS_OFERTABLES=CGX00&ESTADOS_OPOSICIONES=IN&Buscar=Buscar"
+    - nombre: "Auxiliares Administrativos, C2 · plazo abierto"
+      url: "https://empleopublico.carm.es/web/pagina?IDCONTENIDO=62006&IDTIPO=100&RASTRO=c%24m61986%2C61991&BUSCAR_POR=CUERPO_OFERTA&CUERPOS_OFERTABLES=DGX00&ESTADOS_OPOSICIONES=IN&Buscar=Buscar"
+    - nombre: "Biblioteca, Técnicos Auxiliares, C2 · plazo abierto"
+      url: "https://empleopublico.carm.es/web/pagina?IDCONTENIDO=62006&IDTIPO=100&RASTRO=c%24m61986%2C61991&BUSCAR_POR=CUERPO_OFERTA&CUERPOS_OFERTABLES=DFX38&ESTADOS_OPOSICIONES=IN&Buscar=Buscar"
+    - nombre: "Biblioteca, Técnicos Especialistas, C1 · plazo abierto"
+      url: "https://empleopublico.carm.es/web/pagina?IDCONTENIDO=62006&IDTIPO=100&RASTRO=c%24m61986%2C61991&BUSCAR_POR=CUERPO_OFERTA&CUERPOS_OFERTABLES=CFX22&ESTADOS_OPOSICIONES=IN&Buscar=Buscar"
+
 # Relleno de días anteriores con la API de datos abiertos del BOE.
 # 2B = Oposiciones y concursos (equivale a los canales 140 y 141).
 relleno_boe:
