@@ -20,7 +20,6 @@ municipios:
   - Torrevieja
   - San Pedro del Pinatar
   - Almoradí
-  - Almoradi
   - San Javier
   - Los Alcázares
   - Murcia
@@ -87,12 +86,19 @@ fuentes:
   # siempre que el vigía se ejecute todos los días.
   - nombre: "BORM"
     tipo: borm_rss
-    url: "https://www.borm.es/rss/boletin.xml"
+    # Canales del BORM. boletin.xml solo trae el boletín del día; los canales
+    # por organismo (cg.xml, org31.xml...) traen los últimos 30 días.
+    # Añade aquí tantos como quieras, uno por línea.
+    urls:
+      - "https://www.borm.es/rss/boletin.xml"
+      - "https://www.borm.es/rss/cg.xml"
     activa: true
     secciones:
       comunidad_autonoma:      # Sección I (Consejerías, Consejo de Gobierno...)
         activa: true
         municipio_en: ninguno
+        # solo_apartados: ["I2"]   # <- quita el # para leer solo «Autoridades y Personal»
+        #                            (mucho más rápido; I1 leyes, I3 otras disposiciones, I4 anuncios)
       administracion_local:    # Sección IV, solo tus ayuntamientos
         activa: true
         municipio_en: organismo
