@@ -1,0 +1,116 @@
+# =====================================================================
+#  VIGÍA DE EMPLEO PÚBLICO — configuración
+#  Puedes editar este archivo directamente en GitHub (icono del lápiz).
+#  Las líneas que empiezan por # son comentarios y no hacen nada.
+# =====================================================================
+
+# Cuántos días se muestran en la página de resultados.
+dias: 30
+
+# Palabras que deben aparecer en el TEXTO COMPLETO del anuncio (basta una).
+# Mayúsculas y tildes dan igual. Se busca la palabra entera, y también
+# en plural: "administrativo" encuentra "Administrativo/a",
+# "Auxiliar Administrativo" y "administrativos".
+palabras_clave:
+  - administrativo
+  - administrativa
+
+# Municipios que te interesan (basta uno).
+municipios:
+  - Torrevieja
+  - San Pedro del Pinatar
+  - Almoradí
+  - San Javier
+  - Los Alcázares
+  - Murcia
+  - Cartagena
+  - Torre-Pacheco
+  - San Miguel de Salinas
+  - Los Montesinos
+  - Guardamar del Segura
+  - Rojales
+  - Formentera del Segura
+  - Benijófar
+  - Algorfa
+  - Rafal
+  - Benejúzar
+  - Bigastro
+  - Jacarilla
+  - Orihuela
+  - Daya Vieja
+  - Daya Nueva
+  - San Fulgencio
+  - Dolores
+  - Catral
+  - Beniel
+  - Santomera
+  - Alcantarilla
+
+# ---------------------------------------------------------------------
+# Fuentes. "municipio_en" indica DÓNDE se busca el municipio:
+#   titulo    -> en el título, como "Ayuntamiento de X" (evita que salga
+#                todo lo que ponga "(Murcia)" como provincia)
+#   organismo -> el organismo que publica debe ser exactamente uno de tus
+#                municipios ("Alhama de Murcia" NO cuenta como "Murcia")
+#   texto     -> en cualquier parte del texto (más resultados, más ruido)
+#   ninguno   -> no se exige municipio; basta la palabra clave
+# Para desactivar una fuente, pon "activa: false".
+# ---------------------------------------------------------------------
+fuentes:
+  - nombre: "BOE · Oposiciones"
+    tipo: boe_rss
+    url: "https://www.boe.es/rss/canal_per.php?l=p&c=140"
+    municipio_en: titulo
+    activa: true
+
+  - nombre: "BOE · Concursos de personal"
+    tipo: boe_rss
+    url: "https://www.boe.es/rss/canal_per.php?l=p&c=141"
+    municipio_en: titulo
+    activa: true
+
+  - nombre: "BOE · III. Otras disposiciones"
+    tipo: boe_rss
+    url: "https://www.boe.es/rss/boe.php?s=3"
+    municipio_en: texto
+    activa: true
+
+  - nombre: "BOE · V.B. Otros anuncios oficiales"
+    tipo: boe_rss
+    url: "https://www.boe.es/rss/boe.php?s=5B"
+    municipio_en: texto
+    activa: true
+
+  # El BORM solo publica en RSS el boletín del día, pero cada anuncio
+  # indica su sección y su organismo. Por eso basta este único feed,
+  # siempre que el vigía se ejecute todos los días.
+  - nombre: "BORM"
+    tipo: borm_rss
+    url: "https://www.borm.es/rss/boletin.xml"
+    activa: true
+    secciones:
+      comunidad_autonoma:      # Sección I (Consejerías, Consejo de Gobierno...)
+        activa: true
+        municipio_en: ninguno
+      administracion_local:    # Sección IV, solo tus ayuntamientos
+        activa: true
+        municipio_en: organismo
+      particulares:            # Sección V / anuncios de particulares
+        activa: true
+        municipio_en: texto
+
+# Relleno de días anteriores con la API de datos abiertos del BOE.
+# La primera vez recupera los últimos "dias"; después, solo los que falten.
+# 2B = Oposiciones y concursos (equivale a los canales 140 y 141).
+# Puedes añadir "3" y "5B", pero el primer relleno será mucho más lento.
+relleno_boe:
+  activo: true
+  secciones: ["2B"]
+  municipio_en: titulo
+
+# Avisos: abre un "issue" en el repositorio por cada novedad, y GitHub te
+# lo envía por correo. Si en una ejecución hay más de "agrupar_si_mas_de"
+# novedades (por ejemplo, la primera vez), las junta en un solo issue.
+avisos:
+  issues: true
+  agrupar_si_mas_de: 8
