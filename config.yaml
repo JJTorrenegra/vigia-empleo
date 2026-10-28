@@ -2,20 +2,118 @@
 #  VIGÍA DE EMPLEO PÚBLICO — configuración
 #  Puedes editar este archivo directamente en GitHub (icono del lápiz).
 #  Las líneas que empiezan por # son comentarios y no hacen nada.
+#  Mayúsculas y tildes dan igual. El plural se reconoce solo
+#  («bolsa de trabajo» también encuentra «bolsas de trabajo»).
 # =====================================================================
 
 # Cuántos días se muestran en la página de resultados.
 dias: 30
 
-# Palabras que deben aparecer en el TEXTO COMPLETO del anuncio (basta una).
-# Mayúsculas y tildes dan igual. Se busca la palabra entera, y también
-# en plural: "administrativo" encuentra "Administrativo/a",
-# "Auxiliar Administrativo" y "administrativos".
-palabras_clave:
+# Un anuncio aparece si cumple LAS TRES condiciones:
+#   1) es una VÍA DE ENTRADA al empleo   (lista «tipos_de_convocatoria»)
+#   2) encaja con tu PERFIL              (lista «perfiles»)
+#   3) es de tu ZONA                     (municipios u organismos de interés)
+# y su título NO contiene nada de «excluir_si_el_titulo_contiene».
+
+# --- 1) Vía de entrada (normalmente se busca en el TÍTULO del anuncio) ---
+tipos_de_convocatoria:
+  - convocatoria
+  - convoca
+  - convocan
+  - proceso selectivo
+  - procedimiento selectivo
+  - pruebas selectivas
+  - selección
+  - bolsa
+  - lista de espera
+  - oposición
+  - concurso-oposición
+  - oferta de empleo
+  - empleo público
+  - plaza
+  - puesto
+  - contratación temporal
+  - contratación laboral
+  - personal laboral temporal
+  - interino
+  - interina
+  - interinidad
+  - estabilización
+  - proceso extraordinario
+  - urgente
+  - urgencia
+  - programa mixto
+  - empleo-formación
+
+# --- 2) Tu perfil (se busca en el TEXTO COMPLETO del anuncio) ---
+perfiles:
+  # Administrativo. «administrativo/a» suelto solo cuenta cuando es un puesto
+  # («plaza de Administrativo», «Auxiliar Administrativo», «Administrativo/a»),
+  # no como adjetivo legal («procedimiento administrativo»).
   - administrativo
   - administrativa
+  - auxiliar administrativo
+  - gestión administrativa
+  - cuerpo de gestión
+  - escala de gestión
+  - subescala de gestión
+  - técnico de gestión
+  - técnica de gestión
+  - gestor de proyectos
+  - gestora de proyectos
+  - técnico de apoyo
+  - técnica de apoyo
+  - apoyo a la gestión
+  - apoyo a la investigación
+  - gestión de la investigación
+  # Universidades y Educación
+  - personal de administración y servicios
+  - PAS
+  - PTGAS
+  - personal técnico, de gestión y de administración y servicios
+  # Proyectos y programas temporales
+  - personal de proyectos
+  - con cargo a proyectos
+  - proyectos europeos
+  - programas europeos
+  - programas de carácter temporal
+  - ejecución de programas
+  - programa mixto de empleo
+  - empleo-formación
+  # Formador
+  - formador
+  - formadora
+  - experto docente
+  - expertos docentes
+  - docencia de la formación profesional para el empleo
+  - formación profesional para el empleo
+  - formación para el empleo
+  - certificado de profesionalidad
+  - ofimática
+  - atención al cliente
+  - inteligencia artificial
+  - software de gestión
+  - ADGG   # certificados de la familia Administración y gestión
+  - ADGD
+  - IFCT   # certificados de Informática y comunicaciones
 
-# Municipios que te interesan (basta uno).
+# Si el TÍTULO contiene algo de esto, se descarta (no son vías de entrada).
+excluir_si_el_titulo_contiene:
+  - subvención
+  - ayuda
+  - premio
+  - licitación
+  - adjudicación
+  - formalización
+  - concurso de traslado
+  - admitidos y excluidos
+  - admitidas y excluidas
+  - composición del tribunal
+
+# Pon «false» para que «administrativo» cuente siempre, también como adjetivo.
+exigir_contexto_de_puesto: true
+
+# --- 3) Tu zona ---
 municipios:
   - Torrevieja
   - San Pedro del Pinatar
@@ -25,6 +123,7 @@ municipios:
   - Murcia
   - Cartagena
   - Torre-Pacheco
+  - La Unión
   - San Miguel de Salinas
   - Los Montesinos
   - Guardamar del Segura
@@ -46,27 +145,41 @@ municipios:
   - Santomera
   - Alcantarilla
 
+# Organismos que también cuentan como «tu zona» aunque no sean un ayuntamiento
+# (se buscan en el título y en el organismo que publica).
+organismos_extra:
+  - Universidad de Murcia
+  - Universidad Politécnica de Cartagena
+  - Universidad Miguel Hernández
+  - Universidad de Alicante
+  - Región de Murcia
+  - Servicio Murciano de Salud
+  - Servicio Regional de Empleo y Formación
+
 # ---------------------------------------------------------------------
-# Fuentes. "municipio_en" indica DÓNDE se busca el municipio:
-#   titulo    -> en el título, como "Ayuntamiento de X" (evita que salga
-#                todo lo que ponga "(Murcia)" como provincia)
-#   organismo -> el organismo que publica debe ser exactamente uno de tus
-#                municipios ("Alhama de Murcia" NO cuenta como "Murcia")
-#   texto     -> en cualquier parte del texto (más resultados, más ruido)
-#   ninguno   -> no se exige municipio; basta la palabra clave
-# Para desactivar una fuente, pon "activa: false".
+# Fuentes.
+#  municipio_en: dónde se busca la zona
+#    titulo    -> «Ayuntamiento de X» u organismo de interés en el título
+#    organismo -> el organismo que publica es uno de tus municipios
+#    texto     -> en cualquier parte del texto (más resultados, más ruido)
+#    ninguno   -> no se exige zona
+#  exigir_tipo: false -> no hace falta la condición 1 (la fuente ya es de empleo)
+#  tipo_en: titulo (rápido, recomendado) o texto
+#  Para desactivar una fuente, pon «activa: false».
 # ---------------------------------------------------------------------
 fuentes:
   - nombre: "BOE · Oposiciones"
     tipo: boe_rss
     url: "https://www.boe.es/rss/canal_per.php?l=p&c=140"
     municipio_en: titulo
+    exigir_tipo: false
     activa: true
 
   - nombre: "BOE · Concursos de personal"
     tipo: boe_rss
     url: "https://www.boe.es/rss/canal_per.php?l=p&c=141"
     municipio_en: titulo
+    exigir_tipo: false
     activa: true
 
   - nombre: "BOE · III. Otras disposiciones"
@@ -81,43 +194,54 @@ fuentes:
     municipio_en: texto
     activa: true
 
-  # El BORM solo publica en RSS el boletín del día, pero cada anuncio
-  # indica su sección y su organismo. Por eso basta este único feed,
-  # siempre que el vigía se ejecute todos los días.
   - nombre: "BORM"
     tipo: borm_rss
-    # Canales del BORM. boletin.xml solo trae el boletín del día; los canales
-    # por organismo (cg.xml, org31.xml...) traen los últimos 30 días.
-    # Añade aquí tantos como quieras, uno por línea.
+    # boletin.xml trae TODO el boletín del día (incluidas «I2. Autoridades y
+    # Personal» e «I3. Otras Disposiciones»). Los canales por organismo traen
+    # los últimos 30 días de ese organismo, también sus anuncios de I2 e I3.
     urls:
-      - "https://www.borm.es/rss/boletin.xml"
-      - "https://www.borm.es/rss/cg.xml"
+      - "https://www.borm.es/rss/boletin.xml"     # BORM del día (todas las secciones)
+      - "https://www.borm.es/rss/cg.xml"          # Consejo de Gobierno
+      - "https://www.borm.es/rss/org31.xml"       # Asamblea Regional
+      - "https://www.borm.es/rss/org375.xml"      # Consejería de Fomento e Infraestructuras
+      - "https://www.borm.es/rss/org369.xml"      # Consejería de Salud
+      - "https://www.borm.es/rss/ent10407.xml"    # Servicio Murciano de Salud
+      - "https://www.borm.es/rss/org29.xml"       # Presidencia
+      - "https://www.borm.es/rss/org178.xml"      # Ayuntamiento de Alcantarilla
+      - "https://www.borm.es/rss/org189.xml"      # Ayuntamiento de Cartagena
+      - "https://www.borm.es/rss/org196.xml"      # Ayuntamiento de La Unión
+      - "https://www.borm.es/rss/org200.xml"      # Ayuntamiento de Los Alcázares
+      - "https://www.borm.es/rss/org172.xml"      # Ayuntamiento de Murcia
+      - "https://www.borm.es/rss/org209.xml"      # Ayuntamiento de San Javier
+      - "https://www.borm.es/rss/org210.xml"      # Ayuntamiento de San Pedro del Pinatar
+      - "https://www.borm.es/rss/org211.xml"      # Ayuntamiento de Santomera
+      - "https://www.borm.es/rss/org212.xml"      # Ayuntamiento de Torre-Pacheco
+      - "https://www.borm.es/rss/org28.xml"       # Particulares
     activa: true
     secciones:
-      comunidad_autonoma:      # Sección I (Consejerías, Consejo de Gobierno...)
-        activa: true
-        municipio_en: ninguno
-        # solo_apartados: ["I2"]   # <- quita el # para leer solo «Autoridades y Personal»
-        #                            (mucho más rápido; I1 leyes, I3 otras disposiciones, I4 anuncios)
+      comunidad_autonoma:      # Sección I: I1 Disposiciones, I2 Autoridades y Personal,
+        activa: true           #            I3 Otras Disposiciones, I4 Anuncios
+        municipio_en: ninguno  # todo lo de la Comunidad Autónoma cuenta
+        # solo_apartados: ["I2", "I3"]   # <- quita el # para leer solo esos apartados
       administracion_local:    # Sección IV, solo tus ayuntamientos
         activa: true
         municipio_en: organismo
       particulares:            # Sección V / anuncios de particulares
         activa: true
         municipio_en: texto
+        tipo_en: texto         # sus títulos son genéricos: el tipo se busca en el texto
 
 # Relleno de días anteriores con la API de datos abiertos del BOE.
-# La primera vez recupera los últimos "dias"; después, solo los que falten.
 # 2B = Oposiciones y concursos (equivale a los canales 140 y 141).
-# Puedes añadir "3" y "5B", pero el primer relleno será mucho más lento.
 relleno_boe:
   activo: true
   secciones: ["2B"]
   municipio_en: titulo
+  exigir_tipo: false
 
-# Avisos: abre un "issue" en el repositorio por cada novedad, y GitHub te
-# lo envía por correo. Si en una ejecución hay más de "agrupar_si_mas_de"
-# novedades (por ejemplo, la primera vez), las junta en un solo issue.
+# Avisos: abre un «issue» en el repositorio por cada novedad y GitHub te lo
+# envía por correo. Si hay más de «agrupar_si_mas_de» novedades a la vez,
+# las junta en un solo issue.
 avisos:
   issues: true
   agrupar_si_mas_de: 8
