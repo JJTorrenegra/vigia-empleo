@@ -30,8 +30,35 @@
  "filtro": 3,
  "pendientes": {},
  "ultima": {
-  "hora": "28/10/2026 17:33",
-  "revisados": 1425,
+  "hora": "28/10/2026 18:42",
+  "revisados": 1,
   "pendientes": 0
- }
+ },
+ "carm_vistos": {},
+ "carm_actual": [
+  {
+   "nombre": "Administrativo, C1 · plazo abierto",
+   "url": "https://empleopublico.carm.es/web/pagina?IDCONTENIDO=62006&IDTIPO=100&RASTRO=c%24m61986%2C61991&BUSCAR_POR=CUERPO_OFERTA&CUERPOS_OFERTABLES=CGX00&ESTADOS_OPOSICIONES=IN&Buscar=Buscar",
+   "filas": [],
+   "error": ""
+  },
+  {
+   "nombre": "Auxiliares Administrativos, C2 · plazo abierto",
+   "url": "https://empleopublico.carm.es/web/pagina?IDCONTENIDO=62006&IDTIPO=100&RASTRO=c%24m61986%2C61991&BUSCAR_POR=CUERPO_OFERTA&CUERPOS_OFERTABLES=DGX00&ESTADOS_OPOSICIONES=IN&Buscar=Buscar",
+   "filas": [],
+   "error": ""
+  },
+  {
+   "nombre": "Biblioteca, Técnicos Auxiliares, C2 · plazo abierto",
+   "url": "https://empleopublico.carm.es/web/pagina?IDCONTENIDO=62006&IDTIPO=100&RASTRO=c%24m61986%2C61991&BUSCAR_POR=CUERPO_OFERTA&CUERPOS_OFERTABLES=DFX38&ESTADOS_OPOSICIONES=IN&Buscar=Buscar",
+   "filas": [],
+   "error": ""
+  },
+  {
+   "nombre": "Biblioteca, Técnicos Especialistas, C1 · plazo abierto",
+   "url": "https://empleopublico.carm.es/web/pagina?IDCONTENIDO=62006&IDTIPO=100&RASTRO=c%24m61986%2C61991&BUSCAR_POR=CUERPO_OFERTA&CUERPOS_OFERTABLES=CFX22&ESTADOS_OPOSICIONES=IN&Buscar=Buscar",
+   "filas": [],
+   "error": ""
+  }
+ ]
 }
