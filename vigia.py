@@ -31,6 +31,17 @@ F_ESTADO = DATOS / "estado.json"
 
 HOY = dt.date.today()
 PAUSA = 0.4  # segundos entre descargas, para no saturar los servidores
+FILTRO_VERSION = 2  # súbelo si cambias la lógica de búsqueda: se vuelve a analizar todo
+
+# "administrativo" solo cuenta si aparece como puesto de trabajo, no como
+# adjetivo legal ("procedimiento administrativo", "carga administrativa"...).
+CONTEXTO_ANTES = set("""plaza plazas puesto puestos cuerpo escala subescala categoria
+categorias personal bolsa auxiliar auxiliares tecnico tecnica tecnicos tecnicas oficial
+ayudante convoca convocatoria proveer cubrir oposicion oposiciones concurso seleccion
+contratacion contratar empleo""".split())
+CONTEXTO_DESPUES = set("plaza plazas vacante vacantes subgrupo c1 c2".split())
+# Un municipio precedido de esto no cuenta ("Región de Murcia" no es Murcia).
+NO_MUNICIPIO = [["region", "de"], ["universidad", "de"], ["provincia", "de"], ["comunidad", "de"]]
 
 SESION = requests.Session()
 SESION.headers["User-Agent"] = "VigiaEmpleoPublico/1.0 (uso personal)"
@@ -64,6 +75,7 @@ class Buscador:
     def __init__(self, cfg):
         claves = "|".join(patron_frase(p) for p in cfg["palabras_clave"])
         self.re_clave = re.compile(rf"\b(?:{claves})s?\b")
+        self.exigir_puesto = cfg.get("exigir_contexto_de_puesto", True)
         self.municipios = cfg["municipios"]
         self.mun_norm = {m: " ".join(normalizar(m).split()) for m in self.municipios}
         self.re_mun_texto = {
@@ -72,15 +84,25 @@ class Buscador:
             m: re.compile(rf"\bayuntamiento\s+de\s+{patron_frase(m)}\b")
             for m in self.municipios}
 
+    def _es_puesto(self, n, texto, m):
+        antes = n[max(0, m.start() - 80):m.start()].split()[-3:]
+        despues = n[m.end():m.end() + 60].split()[:3]
+        if any(w in CONTEXTO_ANTES for w in antes):
+            return True
+        if any(w in CONTEXTO_DESPUES for w in despues):
+            return True
+        return bool(re.match(r"\s*/\s*[oa]\b", texto[m.end():m.end() + 6]))  # «Administrativo/a»
+
     def clave(self, texto):
-        """Devuelve un fragmento alrededor de la primera coincidencia, o None."""
+        """Devuelve un fragmento alrededor de la primera coincidencia válida, o None."""
         n = normalizar(texto)
-        m = self.re_clave.search(n)
-        if not m:
-            return None
-        ini, fin = max(0, m.start() - 160), min(len(texto), m.end() + 160)
-        frag = " ".join(texto[ini:fin].split())
-        return ("…" if ini > 0 else "") + frag + ("…" if fin < len(texto) else "")
+        for m in self.re_clave.finditer(n):
+            if self.exigir_puesto and not self._es_puesto(n, texto, m):
+                continue
+            ini, fin = max(0, m.start() - 160), min(len(texto), m.end() + 160)
+            frag = " ".join(texto[ini:fin].split())
+            return ("…" if ini > 0 else "") + frag + ("…" if fin < len(texto) else "")
+        return None
 
     def municipio(self, modo, titulo="", organismo="", texto=""):
         """Devuelve el municipio encontrado según el modo, '' si no se exige,
@@ -103,8 +125,10 @@ class Buscador:
         if modo == "texto":
             n = normalizar(" ".join([titulo, organismo, texto]))
             for m, rx in self.re_mun_texto.items():
-                if rx.search(n):
-                    return m
+                for hit in rx.finditer(n):
+                    previo = n[max(0, hit.start() - 30):hit.start()].split()[-2:]
+                    if previo not in NO_MUNICIPIO:
+                        return m
             return None
         raise ValueError(f"municipio_en desconocido: {modo}")
 
@@ -309,7 +333,10 @@ def analizar(c, buscador):
     mun = buscador.municipio(c["modo"], c["titulo"], c["organismo"], texto)
     if mun is None:
         return None
+    promocion = bool(re.search(r"promocion\s+interna|turno\s+de\s+promocion|promocion\s+cruzada",
+                               normalizar(texto)))
     return {
+        "promocion": promocion,
         "id": c["id"], "fuente": c["fuente"], "titulo": c["titulo"],
         "organismo": c["organismo"], "seccion": c["seccion"],
         "fecha": c["fecha"].isoformat(), "url": c["url"], "municipio": mun,
@@ -335,7 +362,7 @@ def crear_issue(titulo, cuerpo):
 def ficha_md(r):
     org = f"**{r['organismo']}** · " if r["organismo"] else ""
     return (f"### {r['titulo']}\n{org}{r['fuente']} · publicado el {fecha_es(r['fecha'])}"
-            f" · municipio: {r['municipio'] or '—'}\n\n> {r['fragmento']}\n\n"
+            f" · municipio: {r['municipio'] or '—'}{' · ⚠️ promoción interna' if r.get('promocion') else ''}\n\n> {r['fragmento']}\n\n"
             f"🔗 {r['url']}\n")
 
 
@@ -373,12 +400,13 @@ def generar_pagina(resultados, cfg):
     e = html.escape
     tarjetas = []
     for r in lista:
-        nuevo = r["detectado"] >= (HOY - dt.timedelta(days=1)).isoformat()
+        nuevo = (r["detectado"] >= (HOY - dt.timedelta(days=1)).isoformat()
+                 and r["fecha"] >= (HOY - dt.timedelta(days=3)).isoformat())
         etiqueta = "BORM" if r["fuente"].startswith("BORM") else "BOE"
         tarjetas.append(f"""
   <article class="{'nuevo' if nuevo else ''}">
     <div class="meta"><span class="tag {etiqueta.lower()}">{etiqueta}</span>
-      <time>{fecha_es(r['fecha'])}</time>{'<span class="badge">nuevo</span>' if nuevo else ''}</div>
+      <time>{fecha_es(r['fecha'])}</time>{'<span class="badge">nuevo</span>' if nuevo else ''}{'<span class="badge prom">promoción interna</span>' if r.get('promocion') else ''}</div>
     <h2><a href="{e(r['url'])}" target="_blank" rel="noopener">{e(r['titulo'])}</a></h2>
     <p class="org">{e(r['organismo'] or '')}{' · ' if r['organismo'] else ''}{e(r['fuente'])}{' · <b>' + e(r['municipio']) + '</b>' if r['municipio'] else ''}</p>
     <p class="frag">{e(r['fragmento'])}</p>
@@ -401,6 +429,7 @@ def generar_pagina(resultados, cfg):
  .badge{{background:var(--acc);color:#fff;border-radius:4px;padding:1px 7px;font-weight:600}}
  h2{{font-size:1.02rem;margin:6px 0}} h2 a{{color:var(--fg)}} h2 a:hover{{color:var(--acc)}}
  .org{{margin:0 0 6px;font-size:.88rem;color:var(--mut)}} .frag{{margin:0;font-size:.9rem}}
+ .badge.prom{{background:transparent;color:var(--acc);border:1px solid var(--acc)}}
  .vacio{{color:var(--mut)}} footer{{max-width:820px;margin:auto;padding:0 16px 30px;font-size:.8rem;color:var(--mut)}}
 </style></head><body>
 <header><h1>Vigía de empleo público</h1>
@@ -430,6 +459,13 @@ def main():
     vistos = cargar(F_VISTOS, {})
     resultados = cargar(F_RESULTADOS, [])
     estado = cargar(F_ESTADO, {})
+    reanalisis = False
+    if estado.get("filtro") != FILTRO_VERSION:
+        if vistos or resultados:
+            log("Filtro actualizado: se vuelve a analizar todo (sin enviar avisos repetidos).")
+            vistos, resultados, estado["dias_boe"] = {}, [], []
+            reanalisis = True
+        estado["filtro"] = FILTRO_VERSION
     ids_resultado = {r["id"] for r in resultados}
     fuentes_caidas = 0
 
@@ -475,7 +511,7 @@ def main():
     guardar(F_RESULTADOS, resultados)
     guardar(F_ESTADO, estado)
     generar_pagina(resultados, cfg)
-    if not sin_avisos:
+    if not sin_avisos and not reanalisis:
         avisar(nuevos, cfg)
 
     log(f"\nNovedades: {len(nuevos)}")
