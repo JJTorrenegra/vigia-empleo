@@ -268,5 +268,20 @@
   "municipio": "Región de Murcia",
   "fragmento": "…exo de personal /Plantilla del Presupuesto de ejercicio 2026, en el sentido de incluir el siguiente puesto de trabajo vacante: Contrato: Laboral Fijo Puesto: Administrativo/a de Apoyo a Intervención. Número del CPT: 06-B Provisión: Promoción Interna Grupo: C1 Nivel de Complemento de destino: 18 Complemento Específico anual: 8.59…",
   "detectado": "2026-10-28"
+ },
+ {
+  "promocion": true,
+  "tipo": "oferta de empleo",
+  "perfil": "Técnico de Gestión",
+  "id": "BORM-845983",
+  "fuente": "BORM",
+  "titulo": "5301 Edicto de aprobación de oferta de empleo público 2026. (2 página/s - 205.41KB)",
+  "organismo": "Torre Pacheco",
+  "seccion": "IV. Administración Local",
+  "fecha": "2026-10-29",
+  "url": "https://www.borm.es/services/anuncio/845983/pdf",
+  "municipio": "Torre-Pacheco",
+  "fragmento": "…greso de personal funcionario de carrera 1. Turno libre GRUPO SUBGRUPO ESCALA DENOMINACIÓN N.º PLAZAS A A2 Admón Especial Arquitecto Técnico 1 B Admón Especial Técnico de Gestión Proyectos Urbanísticos 1 C C1 Admón. General Administrativo 1 C C1 Admón Especial Policía Local 1 C C1 Admón Especial Encargado vigilante de obras 1 Por acumul…",
+  "detectado": "2026-10-29"
  }
 ]
