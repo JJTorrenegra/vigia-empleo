@@ -1,6 +1,5 @@
 {
  "dias_boe": [
-  "2026-09-30",
   "2026-10-01",
   "2026-10-02",
   "2026-10-03",
@@ -29,40 +28,57 @@
   "2026-10-30",
   "2026-10-31",
   "2026-11-02",
-  "2026-11-03"
+  "2026-11-03",
+  "2026-11-04"
  ],
  "filtro": 3,
  "pendientes": {},
  "ultima": {
-  "hora": "04/11/2026 21:54",
-  "revisados": 1,
+  "hora": "05/11/2026 12:12",
+  "revisados": 170,
   "pendientes": 0
  },
- "carm_vistos": {},
- "carm_actual": [
+ "portales_vistos": {},
+ "portales_actual": [
   {
-   "nombre": "Administrativo, C1 · plazo abierto",
-   "url": "https://empleopublico.carm.es/web/pagina?IDCONTENIDO=62006&IDTIPO=100&RASTRO=c%24m61986%2C61991&BUSCAR_POR=CUERPO_OFERTA&CUERPOS_OFERTABLES=CGX00&ESTADOS_OPOSICIONES=IN&Buscar=Buscar",
-   "filas": [],
-   "error": ""
+   "titulo": "Portal de Empleo Público de la CARM",
+   "busquedas": [
+    {
+     "nombre": "Administrativo, C1 · plazo abierto",
+     "url": "https://empleopublico.carm.es/web/pagina?IDCONTENIDO=62006&IDTIPO=100&RASTRO=c%24m61986%2C61991&BUSCAR_POR=CUERPO_OFERTA&CUERPOS_OFERTABLES=CGX00&ESTADOS_OPOSICIONES=IN&Buscar=Buscar",
+     "filas": [],
+     "error": ""
+    },
+    {
+     "nombre": "Auxiliares Administrativos, C2 · plazo abierto",
+     "url": "https://empleopublico.carm.es/web/pagina?IDCONTENIDO=62006&IDTIPO=100&RASTRO=c%24m61986%2C61991&BUSCAR_POR=CUERPO_OFERTA&CUERPOS_OFERTABLES=DGX00&ESTADOS_OPOSICIONES=IN&Buscar=Buscar",
+     "filas": [],
+     "error": ""
+    },
+    {
+     "nombre": "Biblioteca, Técnicos Auxiliares, C2 · plazo abierto",
+     "url": "https://empleopublico.carm.es/web/pagina?IDCONTENIDO=62006&IDTIPO=100&RASTRO=c%24m61986%2C61991&BUSCAR_POR=CUERPO_OFERTA&CUERPOS_OFERTABLES=DFX38&ESTADOS_OPOSICIONES=IN&Buscar=Buscar",
+     "filas": [],
+     "error": ""
+    },
+    {
+     "nombre": "Biblioteca, Técnicos Especialistas, C1 · plazo abierto",
+     "url": "https://empleopublico.carm.es/web/pagina?IDCONTENIDO=62006&IDTIPO=100&RASTRO=c%24m61986%2C61991&BUSCAR_POR=CUERPO_OFERTA&CUERPOS_OFERTABLES=CFX22&ESTADOS_OPOSICIONES=IN&Buscar=Buscar",
+     "filas": [],
+     "error": ""
+    }
+   ]
   },
   {
-   "nombre": "Auxiliares Administrativos, C2 · plazo abierto",
-   "url": "https://empleopublico.carm.es/web/pagina?IDCONTENIDO=62006&IDTIPO=100&RASTRO=c%24m61986%2C61991&BUSCAR_POR=CUERPO_OFERTA&CUERPOS_OFERTABLES=DGX00&ESTADOS_OPOSICIONES=IN&Buscar=Buscar",
-   "filas": [],
-   "error": ""
-  },
-  {
-   "nombre": "Biblioteca, Técnicos Auxiliares, C2 · plazo abierto",
-   "url": "https://empleopublico.carm.es/web/pagina?IDCONTENIDO=62006&IDTIPO=100&RASTRO=c%24m61986%2C61991&BUSCAR_POR=CUERPO_OFERTA&CUERPOS_OFERTABLES=DFX38&ESTADOS_OPOSICIONES=IN&Buscar=Buscar",
-   "filas": [],
-   "error": ""
-  },
-  {
-   "nombre": "Biblioteca, Técnicos Especialistas, C1 · plazo abierto",
-   "url": "https://empleopublico.carm.es/web/pagina?IDCONTENIDO=62006&IDTIPO=100&RASTRO=c%24m61986%2C61991&BUSCAR_POR=CUERPO_OFERTA&CUERPOS_OFERTABLES=CFX22&ESTADOS_OPOSICIONES=IN&Buscar=Buscar",
-   "filas": [],
-   "error": ""
+   "titulo": "Ayuntamiento de Cartagena · Convocatorias",
+   "busquedas": [
+    {
+     "nombre": "Convocatorias con inscripción abierta",
+     "url": "https://selectact.cartagena.es/opac/busca.php?busca2=v12abierta&formTipo=0&codopac=OP003&getxpagina=200",
+     "filas": [],
+     "error": ""
+    }
+   ]
   }
  ]
 }
