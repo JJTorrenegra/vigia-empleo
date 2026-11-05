@@ -346,41 +346,109 @@ def leer_portal_carm(url):
     return filas
 
 
-def revisar_portal_carm(cfg, estado):
-    """Devuelve (convocatorias nuevas, nº de búsquedas fallidas)."""
-    portal = cfg.get("portal_carm") or {}
-    if not portal.get("activo"):
-        estado.pop("carm_actual", None)
-        return [], 0
-    log("▶ Portal de Empleo Público CARM")
-    conocidas = estado.setdefault("carm_vistos", {})
+def _limpiar(x):
+    return " ".join(html.unescape(re.sub(r"<[^>]+>", " ", x or "")).split())
+
+
+def leer_portal_cartagena(url):
+    """Lee un listado de selectact.cartagena.es (convocatorias del Ayuntamiento de
+    Cartagena). Sin resultados, la web deja la lista vacía y redirige a
+    «resultado=0»; si no aparece ninguna de las dos cosas, la web ha cambiado."""
+    r = descargar(url, cabeceras={"User-Agent": CAB_NAVEGADOR["User-Agent"],
+                                  "Accept-Language": "es-ES,es;q=0.9"})
+    if r is None:
+        raise RuntimeError("la búsqueda no existe (404)")
+    cs = re.search(rb'charset=["\']?([\w-]+)', r.content[:4000])
+    h = r.content.decode(cs.group(1).decode() if cs else "iso-8859-1", errors="replace")
+    if "idlista01" not in h and "resultado=0" not in h:
+        raise RuntimeError("no encuentro la lista de convocatorias (¿ha cambiado la web?)")
+    filas = []
+    for card in h.split('class="card mt-2"')[1:]:
+        a = re.search(r'<a[^>]*href="([^"]*ficha\.php\?informatico=([0-9A-Za-z]+)[^"]*)"[^>]*>(.*?)</a>',
+                      card, re.S)
+        if not a:
+            continue
+        def campo(rx):
+            m = re.search(rx, card, re.S)
+            return _limpiar(m.group(1)) if m else ""
+        grupo = campo(r'class="circulo"[^>]*>(.*?)</span>')
+        tipo = campo(r"<!--\s*tipo de proceso\s*-->(.*?)</div>")
+        plazas = campo(r"Plazas:\s*</label>(.*?)</div>")
+        filas.append({
+            "codigo": a.group(2),
+            "titulo": f"{grupo} {_limpiar(a.group(3))}".strip(),
+            "detalle": " · ".join(x for x in (tipo, f"Plazas: {plazas}" if plazas else "") if x),
+            "fase": campo(r"Estado:\s*</label>(.*?)</div>"),
+            "plazo": campo(r"Plazo:(?:&nbsp;|\s)*</label>(.*?)</div>"),
+            "url": urljoin(url, html.unescape(a.group(1))),
+        })
+    return filas
+
+
+def _filas_carm(url):
+    return [{"codigo": f["codigo"], "titulo": f["convocatoria"],
+             "detalle": f"{f['cuerpo']} · {f['oferta']}", "fase": f["fase"], "plazo": "",
+             "url": f["url"]} for f in leer_portal_carm(url)]
+
+
+# (clave en config.yaml, título en la web, prefijo interno, lector)
+PORTALES = [
+    ("portal_carm", "Portal de Empleo Público de la CARM", "CARM", _filas_carm),
+    ("portal_cartagena", "Ayuntamiento de Cartagena · Convocatorias", "CTG", leer_portal_cartagena),
+]
+
+
+def revisar_portales(cfg, estado):
+    """Consulta las búsquedas de los portales. Devuelve (nuevas, nº de búsquedas fallidas)."""
+    conocidas = estado.setdefault("portales_vistos", {})
+    for k, v in (estado.pop("carm_vistos", None) or {}).items():   # versión anterior
+        conocidas.setdefault(f"CARM:{k}", v)
+    estado.pop("carm_actual", None)
     actual, nuevas, caidas = [], [], 0
-    for b in portal.get("busquedas") or []:
-        try:
-            filas, err = leer_portal_carm(b["url"]), ""
-        except Exception as ex:
-            filas, err = [], str(ex)[:200]
-            caidas += 1
-            errores.append(f"Portal CARM «{b['nombre']}»: {ex}")
-        for f in filas:
-            f["busqueda"] = b["nombre"]
-            f["nuevo"] = f["codigo"] not in conocidas
-            if f["nuevo"]:
-                conocidas[f["codigo"]] = HOY.isoformat()
-                nuevas.append(f)
-        log(f"   {b['nombre']}: {len(filas)} convocatoria(s)" + (f"  ⚠ {err}" if err else ""))
-        actual.append({"nombre": b["nombre"], "url": b["url"], "filas": filas, "error": err})
-    estado["carm_actual"] = actual
+    for clave, titulo, prefijo, lector in PORTALES:
+        conf = cfg.get(clave) or {}
+        if not conf.get("activo"):
+            continue
+        log(f"▶ {titulo}")
+        bloque = {"titulo": titulo, "busquedas": []}
+        for b in conf.get("busquedas") or []:
+            try:
+                filas, err = lector(b["url"]), ""
+            except Exception as ex:
+                filas, err = [], str(ex)[:200]
+                caidas += 1
+                errores.append(f"{titulo} «{b['nombre']}»: {ex}")
+            for f in filas:
+                f["busqueda"], f["portal"] = b["nombre"], titulo
+                k = f"{prefijo}:{f['codigo']}"
+                f["nuevo"] = k not in conocidas
+                if f["nuevo"]:
+                    conocidas[k] = HOY.isoformat()
+                    nuevas.append(f)
+            log(f"   {b['nombre']}: {len(filas)} convocatoria(s)" + (f"  ⚠ {err}" if err else ""))
+            bloque["busquedas"].append({"nombre": b["nombre"], "url": b["url"],
+                                        "filas": filas, "error": err})
+        actual.append(bloque)
+    estado["portales_actual"] = actual
     return nuevas, caidas
 
 
-def avisar_carm(nuevas, cfg):
-    if not (cfg.get("avisos") or {}).get("issues") or not nuevas:
+def ficha_portal_md(f):
+    plazo = f" · plazo: {f['plazo']}" if f.get("plazo") else ""
+    return (f"### {f['titulo']}\n{f['detalle']} · estado: **{f['fase']}**{plazo}\n\n"
+            f"{f['portal']} — búsqueda «{f['busqueda']}»\n\n🔗 {f['url']}\n")
+
+
+def avisar_portales(nuevas, cfg):
+    av = cfg.get("avisos") or {}
+    if not av.get("issues") or not nuevas:
         return
-    for f in nuevas:
-        crear_issue(f"🔔 [Empleo Público CARM] {f['cuerpo']} · {f['convocatoria']}",
-                    f"### {f['convocatoria']}\n**{f['cuerpo']}** · {f['oferta']} · fase: **{f['fase']}**\n\n"
-                    f"Búsqueda: {f['busqueda']}\n\n🔗 {f['url']}")
+    if len(nuevas) > av.get("agrupar_si_mas_de", 8):
+        crear_issue(f"🔔 {len(nuevas)} convocatorias nuevas en los portales de empleo",
+                    "\n\n".join(ficha_portal_md(f) for f in nuevas)[:60000])
+    else:
+        for f in nuevas:
+            crear_issue(f"🔔 [{f['portal']}] {f['titulo']}", ficha_portal_md(f))
 
 
 # ----------------------------------------------------------------- fuentes ---
@@ -666,25 +734,33 @@ def generar_pagina(resultados, cfg, estado=None):
         if ult.get("pendientes"):
             estado_txt += (f'<br><span class="aviso">⚠ {ult["pendientes"]} anuncio(s) del BORM '
                            "sin poder leer todavía; se reintentan en cada revisión.</span>")
-    bloques = []
-    for b in (estado or {}).get("carm_actual", []):
-        if b["error"]:
-            cuerpo = f'<p class="aviso">⚠ No se pudo consultar: {e(b["error"])}</p>'
-        elif b["filas"]:
-            cuerpo = "<ul>" + "".join(
-                f'<li><a href="{e(f["url"])}" target="_blank" rel="noopener">{e(f["convocatoria"])}</a>'
-                f' · {e(f["oferta"])} · <b>{e(f["fase"])}</b>'
-                f'{" <span class=badge>nuevo</span>" if f.get("nuevo") else ""}</li>'
-                for f in b["filas"]) + "</ul>"
-        else:
-            cuerpo = '<p class="vacio">Ninguna convocatoria en este momento.</p>'
-        bloques.append(f'<div class="bus"><h3><a href="{e(b["url"])}" target="_blank" '
-                       f'rel="noopener">{e(b["nombre"])}</a></h3>{cuerpo}</div>')
+    secciones = []
+    for portal in (estado or {}).get("portales_actual", []):
+        bloques = []
+        for b in portal["busquedas"]:
+            if b["error"]:
+                cuerpo = f'<p class="aviso">⚠ No se pudo consultar: {e(b["error"])}</p>'
+            elif b["filas"]:
+                cuerpo = "<ul>" + "".join(
+                    f'<li><a href="{e(f["url"])}" target="_blank" rel="noopener">{e(f["titulo"])}</a>'
+                    f'{" · " + e(f["detalle"]) if f.get("detalle") else ""} · <b>{e(f["fase"])}</b>'
+                    f'{" · plazo " + e(f["plazo"]) if f.get("plazo") else ""}'
+                    f'{" <span class=badge>nuevo</span>" if f.get("nuevo") else ""}</li>'
+                    for f in b["filas"]) + "</ul>"
+            else:
+                cuerpo = '<p class="vacio">Ninguna convocatoria en este momento.</p>'
+            bloques.append(f'<div class="bus"><h3><a href="{e(b["url"])}" target="_blank" '
+                           f'rel="noopener">{e(b["nombre"])}</a></h3>{cuerpo}</div>')
+        secciones.append(f'<section class="portal"><h2>{e(portal["titulo"])}</h2>{"".join(bloques)}</section>')
+    enlaces = cfg.get("enlaces") or []
+    if enlaces:
+        secciones.append('<section class="portal"><h2>Enlaces rápidos</h2><p class="org">Páginas que '
+                         'conviene mirar a mano (el vigía no las lee).</p><ul>' + "".join(
+                             f'<li><a href="{e(x["url"])}" target="_blank" rel="noopener">{e(x["nombre"])}</a></li>'
+                             for x in enlaces) + "</ul></section>")
     portal_html = ""
-    if bloques:
-        portal_html = ('<section class="portal"><h2>Portal de Empleo Público de la CARM</h2>'
-                       '<p class="org">Situación actual de tus búsquedas en empleopublico.carm.es</p>'
-                       + "".join(bloques) + '</section><h2 class="sec">Boletines (BOE y BORM)</h2>')
+    if secciones:
+        portal_html = "".join(secciones) + '<h2 class="sec">Boletines (BOE y BORM)</h2>'
     vacio = '<p class="vacio">No hay anuncios que cumplan la búsqueda en este periodo.</p>'
     pagina = f"""<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
@@ -800,7 +876,7 @@ def main():
         total_rev += n_rev
         log(f"   {n_rev} anuncios nuevos revisados")
 
-    nuevas_carm, caidas_carm = revisar_portal_carm(cfg, estado)
+    nuevas_carm, caidas_carm = revisar_portales(cfg, estado)
     fuentes_caidas += caidas_carm
 
     # Limpieza: olvidar lo visto hace más de 90 días
@@ -825,9 +901,9 @@ def main():
         nuevos = [r for r in nuevos if r["id"] not in ids_previos]
     if not sin_avisos:
         avisar(nuevos, cfg)
-        avisar_carm(nuevas_carm, cfg)
+        avisar_portales(nuevas_carm, cfg)
 
-    log(f"\nNovedades: {len(nuevos)} en boletines, {len(nuevas_carm)} en el portal de la CARM")
+    log(f"\nNovedades: {len(nuevos)} en boletines, {len(nuevas_carm)} en los portales de empleo")
     if errores:
         log("Avisos/errores:\n  - " + "\n  - ".join(errores[:50]))
     if pend:

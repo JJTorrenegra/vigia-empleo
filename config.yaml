@@ -254,6 +254,29 @@ portal_carm:
     - nombre: "Biblioteca, Técnicos Especialistas, C1 · plazo abierto"
       url: "https://empleopublico.carm.es/web/pagina?IDCONTENIDO=62006&IDTIPO=100&RASTRO=c%24m61986%2C61991&BUSCAR_POR=CUERPO_OFERTA&CUERPOS_OFERTABLES=CFX22&ESTADOS_OPOSICIONES=IN&Buscar=Buscar"
 
+# ---------------------------------------------------------------------
+# Ayuntamiento de Cartagena (selectact.cartagena.es).
+# Mismo funcionamiento: muestra lo que hay ahora y avisa de lo nuevo.
+# Otros listados de la misma web que puedes añadir cambiando «busca2=»:
+#   v15pendien pendientes · v14procesa en proceso · v13cerrada finalizadas
+# (déjale «getxpagina=200» para que salga todo en una sola página)
+# ---------------------------------------------------------------------
+portal_cartagena:
+  activo: true
+  busquedas:
+    - nombre: "Convocatorias con inscripción abierta"
+      url: "https://selectact.cartagena.es/opac/busca.php?busca2=v12abierta&formTipo=0&codopac=OP003&getxpagina=200"
+
+# ---------------------------------------------------------------------
+# Enlaces rápidos: aparecen en la web para mirarlos a mano. El vigía NO los
+# lee. El tablón del Ayuntamiento de Murcia pide a los programas automáticos
+# (robots.txt) que no lo lean; sus convocatorias salen también en el BORM,
+# que ya se vigila con el canal del Ayuntamiento de Murcia (org172).
+# ---------------------------------------------------------------------
+enlaces:
+  - nombre: "Tablón de anuncios del Ayuntamiento de Murcia (búsqueda «plaza»)"
+    url: "https://sede.murcia.es/tablon-de-anuncios?body_value=plaza"
+
 # Relleno de días anteriores con la API de datos abiertos del BOE.
 # 2B = Oposiciones y concursos (equivale a los canales 140 y 141).
 relleno_boe:
