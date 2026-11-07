@@ -343,5 +343,35 @@
   "municipio": "",
   "fragmento": "…rrección de errores de la Orden de 8 de octubre de 2026 de la misma Consejería, por la que se convocan pruebas selectivas para cubrir, 364 plazas del Cuerpo Administrativo de la Administración Pública Regional: 50 plazas de promoción interna (código CGX00P24-2) y 314 plazas de promoción interna sobre el mismo puesto de trabajo…",
   "detectado": "2026-11-06"
+ },
+ {
+  "promocion": false,
+  "tipo": "convocatoria",
+  "perfil": "atención al cliente",
+  "id": "BOE-A-2026-23370",
+  "fuente": "BOE · III. Otras disposiciones",
+  "titulo": "Orden TED/1179/2026, de 5 de noviembre, por la que se establecen los servicios mínimos en el sector de hidrocarburos ante la convocatoria de huelga general prevista para el 11 de noviembre de 2026.",
+  "organismo": "MINISTERIO PARA LA TRANSICIÓN ECOLÓGICA Y EL RETO DEMOGRÁFICO",
+  "seccion": "",
+  "fecha": "2026-11-07",
+  "url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-23370",
+  "municipio": "Torrevieja",
+  "fragmento": "…as instalaciones de transporte y distribución de gas natural que sean necesarias para evitar interrupciones de suministro a clientes finales y los servicios de atención al cliente en casos de urgencia. Asimismo, garantizarán que disponen de los equipos de retén necesarios para atender cualquier anomalía en las redes de su propiedad. Al r…",
+  "detectado": "2026-11-07"
+ },
+ {
+  "promocion": true,
+  "tipo": "convocatoria",
+  "perfil": "Administrativo",
+  "id": "BORM-846152",
+  "fuente": "BORM",
+  "titulo": "5470 Bases que rigen la convocatoria para la provisión de una plaza de Director/Técnico Deportivo como funcionario/a de carrera del Ayuntamiento de Santomera por promoción interna. (12 página/s - 354.1KB)",
+  "organismo": "Santomera",
+  "seccion": "IV. Administración Local",
+  "fecha": "2026-11-07",
+  "url": "https://www.borm.es/services/anuncio/846152/pdf",
+  "municipio": "Santomera",
+  "fragmento": "…egistro General del Ayuntamiento de Santomera o mediante el procedimiento regulado en el artículo 16.4 de la Ley 39/2015, de 1 de octubre, del Procedimiento Administrativo/a Común de las Administraciones Públicas, en el plazo de 20 días hábiles contados a partir del siguiente al de la publicación del extracto de la convocatoria…",
+  "detectado": "2026-11-07"
  }
 ]
