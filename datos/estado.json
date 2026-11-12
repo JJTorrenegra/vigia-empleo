@@ -34,8 +34,8 @@
  "filtro": 3,
  "pendientes": {},
  "ultima": {
-  "hora": "12/11/2026 17:02",
-  "revisados": 178,
+  "hora": "12/11/2026 22:34",
+  "revisados": 0,
   "pendientes": 0
  },
  "portales_vistos": {},
@@ -76,7 +76,7 @@
      "nombre": "Convocatorias con inscripción abierta",
      "url": "https://selectact.cartagena.es/opac/busca.php?busca2=v12abierta&formTipo=0&codopac=OP003&getxpagina=200",
      "filas": [],
-     "error": "HTTPSConnectionPool(host='selectact.cartagena.es', port=443): Max retries exceeded with url: /opac/busca.php?busca2=v12abierta&formTipo=0&codopac=OP003&getxpagina=200 (Caused by ConnectTimeoutError(<H"
+     "error": ""
     }
    ]
   }
