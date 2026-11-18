@@ -523,5 +523,35 @@
   "municipio": "",
   "fragmento": "…enda, Portavocía, Fondos Europeos y Transformación Digital, por la que se convocan pruebas selectivas para cubrir, mediante promoción interna, 25 plazas del Cuerpo de Gestión Administrativa de la Administración Pública Regional (código BGX00P24-1). En cumplimiento de lo dispuesto en el Decreto n.º 331/2024, de 19 de diciembre, sob…",
   "detectado": "2026-11-17"
+ },
+ {
+  "promocion": true,
+  "tipo": "convocatoria",
+  "perfil": "Técnica de Gestión",
+  "id": "BOE-A-2026-24172",
+  "fuente": "BOE · Oposiciones",
+  "titulo": "Resolución de 12 de noviembre de 2026, del Ayuntamiento de Almoradí (Alicante/Alacant), referente a la convocatoria para proveer una plaza.",
+  "organismo": "Administración Local",
+  "seccion": "",
+  "fecha": "2026-11-18",
+  "url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-24172",
+  "municipio": "Almoradí",
+  "fragmento": "…e la Provincia de Alicante» número 104, de 3 de junio de 2025, se han publicado las bases que han de regir la convocatoria para proveer: Una plaza de Técnico o Técnica de Gestión Administrativa de Secretaría, perteneciente a la escala de Administración General, subescala Gestión y clase Media, por el sistema de concurso-oposición, en tu…",
+  "detectado": "2026-11-18"
+ },
+ {
+  "promocion": false,
+  "tipo": "plaza",
+  "perfil": "Inteligencia Artificial",
+  "id": "BOE-A-2026-24132",
+  "fuente": "BOE · Oposiciones",
+  "titulo": "Resolución de 6 de noviembre de 2026, de la Universidad de Alicante, por la que se nombra Catedrático de Universidad a don Rafael Molina Carmona.",
+  "organismo": "Universidades",
+  "seccion": "",
+  "fecha": "2026-11-18",
+  "url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-24132",
+  "municipio": "Universidad de Alicante",
+  "fragmento": "…de universidad (DF03310), convocada por Resolución de 22 de junio de 2026 (BOE de 2 de julio de 2026), del área de conocimiento de Ciencia de la Computación e Inteligencia Artificial, Departamento de Ciencia de la Computación e Inteligencia Artificial, y presentada por el interesado la documentación a que hace referencia la base novena de l…",
+  "detectado": "2026-11-18"
  }
 ]
