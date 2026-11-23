@@ -598,5 +598,35 @@
   "municipio": "La Unión",
   "fragmento": "…terio 23. Cualificación profesional y experiencia del personal de gestión. – Criterio 24. Calidad de los sistemas de control del gasto, prevención del riesgo y gestión administrativa y de RR. HH. (Certificados ISO y Planes de Igualdad, entre otros). – Criterio 25. Fiabilidad del sistema de recogida y comunicación de datos de participantes,…",
   "detectado": "2026-11-21"
+ },
+ {
+  "promocion": true,
+  "tipo": "convocatoria",
+  "perfil": "Auxiliar Administrativo",
+  "id": "BOE-A-2026-24545",
+  "fuente": "BOE · Oposiciones",
+  "titulo": "Resolución de 16 de noviembre de 2026, del Ayuntamiento de Almoradí (Alicante/Alacant), referente a la convocatoria para proveer varias plazas.",
+  "organismo": "Administración Local",
+  "seccion": "",
+  "fecha": "2026-11-23",
+  "url": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-24545",
+  "municipio": "Almoradí",
+  "fragmento": "…ura), perteneciente a la escala de Administración Especial, subescala Técnica y clase Media, por el sistema de concurso-oposición, en turno libre. Una plaza de Auxiliar Administrativo/a, perteneciente a la escala de Administración General, subescala Auxiliar y clase Auxiliar, por el sistema de concurso-oposición, en turno de promoción intern…",
+  "detectado": "2026-11-23"
+ },
+ {
+  "promocion": false,
+  "tipo": "proceso selectivo",
+  "perfil": "Gestión administrativa",
+  "id": "BORM-846478",
+  "fuente": "BORM",
+  "titulo": "5796 Resolución rectificación error material bases proceso selectivo para la selección y provisión de 35 plazas de Bombero-Conductor Especialista del Consorcio de Extinción de Incendios y Salvamento de la Comunidad Autónoma de la Región de Murcia. (2 página/s - 204.43KB)",
+  "organismo": "Consorcio de Extinción de Incendios y Salvamento de la Región de Murcia",
+  "seccion": "V. Otras Disposiciones y Anuncios",
+  "fecha": "2026-11-23",
+  "url": "https://www.borm.es/services/anuncio/846478/pdf",
+  "municipio": "Región de Murcia",
+  "fragmento": "…ATA 3 **– ANEXO VI 5. INFORMACIÓN BÁSICA SOBRE PROTECCIÓN DE DATOS DE CARÁCTER PERSONAL (RGPD) – pág. 28992** Dice (Medición): “…Finalidad del Tratamiento: Gestión administrativa, tramitación, evaluación, publicación de calificaciones y desarrollo general del proceso selectivo de acceso a las plazas de Bombero-Conductor Especialista,…",
+  "detectado": "2026-11-23"
  }
 ]
