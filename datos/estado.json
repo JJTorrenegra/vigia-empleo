@@ -34,8 +34,8 @@
  "filtro": 3,
  "pendientes": {},
  "ultima": {
-  "hora": "27/11/2026 18:30",
-  "revisados": 152,
+  "hora": "27/11/2026 23:54",
+  "revisados": 0,
   "pendientes": 0
  },
  "portales_vistos": {},
@@ -53,19 +53,19 @@
      "nombre": "Auxiliares Administrativos, C2 · plazo abierto",
      "url": "https://empleopublico.carm.es/web/pagina?IDCONTENIDO=62006&IDTIPO=100&RASTRO=c%24m61986%2C61991&BUSCAR_POR=CUERPO_OFERTA&CUERPOS_OFERTABLES=DGX00&ESTADOS_OPOSICIONES=IN&Buscar=Buscar",
      "filas": [],
-     "error": "la búsqueda no existe (404)"
+     "error": ""
     },
     {
      "nombre": "Biblioteca, Técnicos Auxiliares, C2 · plazo abierto",
      "url": "https://empleopublico.carm.es/web/pagina?IDCONTENIDO=62006&IDTIPO=100&RASTRO=c%24m61986%2C61991&BUSCAR_POR=CUERPO_OFERTA&CUERPOS_OFERTABLES=DFX38&ESTADOS_OPOSICIONES=IN&Buscar=Buscar",
      "filas": [],
-     "error": "la búsqueda no existe (404)"
+     "error": ""
     },
     {
      "nombre": "Biblioteca, Técnicos Especialistas, C1 · plazo abierto",
      "url": "https://empleopublico.carm.es/web/pagina?IDCONTENIDO=62006&IDTIPO=100&RASTRO=c%24m61986%2C61991&BUSCAR_POR=CUERPO_OFERTA&CUERPOS_OFERTABLES=CFX22&ESTADOS_OPOSICIONES=IN&Buscar=Buscar",
      "filas": [],
-     "error": "la búsqueda no existe (404)"
+     "error": ""
     }
    ]
   },
